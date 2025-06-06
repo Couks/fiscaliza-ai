@@ -1,27 +1,28 @@
+import { mockProblems } from '@/data/mockData';
 import { useAuthStore } from '@/stores/authStore';
 import { useStatsStore } from '@/stores/statsStore';
 import { MaterialIcons as Icon } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React from 'react';
 import {
-    Alert,
-    Image,
-    RefreshControl,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View
+  Alert,
+  Image,
+  RefreshControl,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import Animated, {
-    BounceIn,
-    FadeIn,
-    SlideInRight,
-    useAnimatedStyle,
-    useSharedValue,
-    withSpring,
-    withTiming
+  BounceIn,
+  FadeIn,
+  SlideInRight,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withTiming
 } from 'react-native-reanimated';
 
 const AnimatedBadgeCard = ({ 
@@ -56,7 +57,7 @@ const AnimatedBadgeCard = ({
   return (
     <Animated.View style={[styles.badgeCard, animatedStyle]}>
       <View style={[styles.badgeIcon, { backgroundColor: badge.color }]}>
-        <Icon name={badge.icon as any} size={24} color="white" />
+        <Icon name={badge.icon as any} size={20} color="white" />
       </View>
       <Text style={styles.badgeName}>{badge.name}</Text>
       <Text style={styles.badgeDescription}>{badge.description}</Text>
@@ -65,7 +66,7 @@ const AnimatedBadgeCard = ({
           entering={BounceIn.delay(index * 100 + 500)}
           style={styles.earnedIndicator}
         >
-          <Icon name="check-circle" size={16} color="#4CAF50" />
+          <Icon name="check-circle" size={14} color="#4CAF50" />
         </Animated.View>
       )}
     </Animated.View>
@@ -95,20 +96,44 @@ const AnimatedProgressBadge = ({
     width: `${progressValue.value}%`,
   }));
 
+  const getPointsReward = () => {
+    // Calcular pontos baseado no tipo de badge
+    if (badge.name.includes('Exemplar')) return 100;
+    if (badge.name.includes('Especialista')) return 75;
+    if (badge.name.includes('Vigilante')) return 80;
+    return 50;
+  };
+
   return (
     <Animated.View 
       entering={SlideInRight.delay(index * 150)}
-      style={styles.nextBadgeCard}
+      style={[
+        styles.achievementCard,
+        badge.progress > 50 && styles.achievementCardActive
+      ]}
     >
-      <View style={[styles.nextBadgeIcon, { backgroundColor: badge.color + '20' }]}>
-        <Icon name={badge.icon as any} size={20} color={badge.color} />
+      <View style={[
+        styles.achievementIcon, 
+        { backgroundColor: badge.color + '20' },
+        badge.progress > 50 && { backgroundColor: badge.color }
+      ]}>
+        <Icon 
+          name={badge.icon as any} 
+          size={20} 
+          color={badge.progress > 50 ? 'white' : badge.color} 
+        />
       </View>
       
-      <View style={styles.nextBadgeInfo}>
-        <Text style={styles.nextBadgeName}>{badge.name}</Text>
-        <Text style={styles.nextBadgeDescription}>{badge.description}</Text>
+      <View style={styles.achievementInfo}>
+        <Text style={[
+          styles.achievementTitle,
+          badge.progress > 50 && styles.achievementTitleActive
+        ]}>
+          {badge.name}
+        </Text>
+        <Text style={styles.achievementDescription}>{badge.description}</Text>
         
-        <View style={styles.progressContainer}>
+        <View style={styles.achievementProgress}>
           <View style={styles.progressBar}>
             <Animated.View 
               style={[
@@ -119,6 +144,11 @@ const AnimatedProgressBadge = ({
             />
           </View>
           <Text style={styles.progressText}>{badge.progress}%</Text>
+        </View>
+        
+        <View style={styles.achievementPoints}>
+          <Icon name="stars" size={12} color="#FFD700" />
+          <Text style={styles.achievementPointsText}>+{getPointsReward()} pts ao completar</Text>
         </View>
       </View>
     </Animated.View>
@@ -160,87 +190,56 @@ const AnimatedStatCard = ({
   return (
     <Animated.View style={[styles.statCard, animatedStyle]}>
       <View style={[styles.statIcon, { backgroundColor: stat.color + '20' }]}>
-        <Icon name={stat.icon as any} size={24} color={stat.color} />
+        <Icon name={stat.icon as any} size={20} color={stat.color} />
       </View>
       <Text style={styles.statValue}>{stat.value}</Text>
       <Text style={styles.statLabel}>{stat.label}</Text>
-      {stat.subtitle && (
-        <Text style={styles.statSubtitle}>{stat.subtitle}</Text>
-      )}
     </Animated.View>
   );
 };
 
-const badges = [
-  {
-    id: 1,
-    name: 'Herói da Limpeza',
-    description: 'Reportou 10 problemas de limpeza',
-    icon: 'cleaning-services',
-    color: '#9C27B0',
-    earned: true,
-    progress: 100,
-  },
-  {
-    id: 2,
-    name: 'Guardião da Cidade',
-    description: 'Reportou 25 problemas no total',
-    icon: 'security',
-    color: '#2196F3',
-    earned: true,
-    progress: 100,
-  },
-  {
-    id: 3,
-    name: 'Observador de Iluminação',
-    description: 'Reportou 5 problemas de iluminação',
-    icon: 'lightbulb',
-    color: '#FF9800',
-    earned: true,
-    progress: 100,
-  },
-  {
-    id: 4,
-    name: 'Especialista em Vias',
-    description: 'Reporte 15 problemas de vias públicas',
-    icon: 'construction',
-    color: '#F44336',
-    earned: false,
-    progress: 73,
-  },
-  {
-    id: 5,
-    name: 'Cidadão Exemplar',
-    description: 'Reporte 50 problemas no total',
-    icon: 'emoji-events',
-    color: '#FFD700',
-    earned: false,
-    progress: 46,
-  },
-  {
-    id: 6,
-    name: 'Vigilante Noturno',
-    description: 'Reporte problemas durante a madrugada',
-    icon: 'nights-stay',
-    color: '#673AB7',
-    earned: false,
-    progress: 0,
-  },
-];
+const RecentActivityCard = ({ 
+  activity, 
+  index 
+}: { 
+  activity: any; 
+  index: number; 
+}) => {
+  return (
+    <Animated.View 
+      entering={FadeIn.delay(index * 100)}
+      style={styles.activityCard}
+    >
+      <View style={[styles.activityIcon, { backgroundColor: activity.color + '20' }]}>
+        <Icon name={activity.icon as any} size={16} color={activity.color} />
+      </View>
+      <View style={styles.activityInfo}>
+        <Text style={styles.activityTitle}>{activity.title}</Text>
+        <Text style={styles.activityTime}>{activity.time}</Text>
+      </View>
+    </Animated.View>
+  );
+};
 
 export default function ProfileScreen() {
   const { user, logout } = useAuthStore();
   const { userStats, globalStats, ranking, isLoading, lastUpdated, loadUserStats, loadRanking } = useStatsStore();
   const [refreshing, setRefreshing] = React.useState(false);
 
-  // Se não tiver usuário logado, usar dados padrão
+  // Usar dados reais do mockData ou dados padrão se não logado
   const userData = user || {
     id: '1',
     name: 'João Silva',
     level: 5,
     points: 1250,
     ranking: 47,
-    badges: badges
+    badges: [],
+    streak: 7,
+    lastActivity: '2024-01-15T14:30:00.000Z',
+    totalComments: 12,
+    joinedDaysAgo: 45,
+    nextLevelPoints: 1500,
+    avatar: undefined,
   };
 
   const loadUserData = React.useCallback(async () => {
@@ -260,7 +259,6 @@ export default function ProfileScreen() {
     loadUserData();
   }, [loadUserData]);
 
-  // Só recarregar quando lastUpdated indica um novo report
   React.useEffect(() => {
     if (lastUpdated > 0) {
       loadUserData();
@@ -272,45 +270,154 @@ export default function ProfileScreen() {
     loadUserData();
   }, [loadUserData]);
 
-  const userBadges = userData.badges || badges;
+  // Usar badges reais do usuário
+  const userBadges = userData.badges || [];
   const earnedBadges = userBadges.filter(badge => badge.earned);
-  const nextBadges = userBadges.filter(badge => !badge.earned);
+  const nextBadges = userBadges.filter(badge => !badge.earned && badge.progress > 0);
 
   const getDisplayStats = () => {
-    if (!userStats) return [];
-    
     const userInRanking = ranking?.find((u: any) => u.id === userData.id);
     
     return [
       { 
-        label: 'Problemas Reportados', 
-        value: userStats.problemsReported, 
+        label: 'Reportes', 
+        value: userStats?.problemsReported || mockProblems.filter(p => p.reportedBy === userData.id).length, 
         icon: 'report-problem', 
-        color: '#F44336',
-        subtitle: 'Total criados'
+        color: '#F44336'
       },
       { 
-        label: 'Problemas Resolvidos', 
-        value: userStats.problemsResolved, 
+        label: 'Resolvidos', 
+        value: userStats?.problemsResolved || mockProblems.filter(p => p.reportedBy === userData.id && p.status === 'resolved').length, 
         icon: 'check-circle', 
-        color: '#4CAF50',
-        subtitle: 'Solucionados'
+        color: '#4CAF50'
       },
       { 
-        label: 'Pontos Acumulados', 
-        value: userInRanking?.points || userData.points, 
-        icon: 'stars', 
-        color: '#FFD700',
-        subtitle: 'Total de pontos'
+        label: 'Comentários', 
+        value: userStats?.totalComments || userData.totalComments || mockProblems.reduce((sum, p) => sum + p.comments.filter(c => c.userId === userData.id).length, 0), 
+        icon: 'comment', 
+        color: '#2196F3'
       },
       { 
-        label: 'Posição no Ranking', 
+        label: 'Ranking', 
         value: `#${userInRanking?.ranking || userData.ranking}`, 
         icon: 'leaderboard', 
-        color: '#2196F3',
-        subtitle: 'Na cidade'
+        color: '#FF9800'
       },
     ];
+  };
+
+  const getRecentActivities = () => {
+    const activities: {
+      id: string;
+      title: string;
+      time: string;
+      icon: string;
+      color: string;
+    }[] = [];
+    
+    // Buscar problemas reportados pelo usuário (atividades reais do mockData)
+    const userProblems = mockProblems
+      .filter(p => p.reportedBy === userData.id)
+      .sort((a, b) => new Date(b.reportedAt).getTime() - new Date(a.reportedAt).getTime())
+      .slice(0, 2);
+    
+    userProblems.forEach(problem => {
+      const timeAgo = getTimeAgo(problem.reportedAt);
+      activities.push({
+        id: `report-${problem.id}`,
+        title: `Reportou: ${problem.title}`,
+        time: timeAgo,
+        icon: 'report',
+        color: '#F44336'
+      });
+    });
+
+    // Buscar comentários do usuário
+    const userComments: {
+      problemTitle: string;
+      comment: any;
+      problemId: string;
+    }[] = [];
+    mockProblems.forEach(problem => {
+      problem.comments
+        .filter(comment => comment.userId === userData.id)
+        .forEach(comment => {
+          userComments.push({
+            problemTitle: problem.title,
+            comment,
+            problemId: problem.id
+          });
+        });
+    });
+    
+    userComments
+      .sort((a, b) => new Date(b.comment.createdAt).getTime() - new Date(a.comment.createdAt).getTime())
+      .slice(0, 1)
+      .forEach(item => {
+        const timeAgo = getTimeAgo(item.comment.createdAt);
+        activities.push({
+          id: `comment-${item.comment.id}`,
+          title: `Comentou em "${item.problemTitle.substring(0, 30)}..."`,
+          time: timeAgo,
+          icon: 'comment',
+          color: '#2196F3'
+        });
+      });
+
+    // Buscar badges conquistadas recentemente
+    const recentBadges = earnedBadges
+      .filter(badge => badge.earnedAt)
+      .sort((a, b) => new Date(b.earnedAt!).getTime() - new Date(a.earnedAt!).getTime())
+      .slice(0, 1);
+    
+    recentBadges.forEach(badge => {
+      const timeAgo = getTimeAgo(badge.earnedAt!);
+      activities.push({
+        id: `badge-${badge.id}`,
+        title: `Conquistou "${badge.name}"`,
+        time: timeAgo,
+        icon: 'emoji-events',
+        color: badge.color
+      });
+    });
+
+    return activities.slice(0, 3);
+  };
+
+  const getTimeAgo = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - date.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const diffHours = Math.ceil(diffTime / (1000 * 60 * 60));
+    
+    if (diffHours < 24) {
+      if (diffHours === 1) return 'Há 1 hora';
+      return `Há ${diffHours} horas`;
+    }
+    if (diffDays === 1) return 'Ontem';
+    if (diffDays === 2) return 'Anteontem';
+    return `${diffDays} dias atrás`;
+  };
+
+  const formatLastActivity = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - date.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 1) return 'Hoje';
+    if (diffDays === 2) return 'Ontem';
+    return `${diffDays-1} dias atrás`;
+  };
+
+  const getProgressToNextLevel = () => {
+    const currentPoints = userData.points;
+    const nextLevelPoints = userData.nextLevelPoints;
+    const previousLevelPoints = (userData.level - 1) * 250; // Assumindo 250 pontos por nível
+    
+    const progress = ((currentPoints - previousLevelPoints) / (nextLevelPoints - previousLevelPoints)) * 100;
+    return Math.min(100, Math.max(0, progress));
   };
 
   const handleLogout = () => {
@@ -336,6 +443,25 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* Header - Fixo no topo com medidas consistentes */}
+      <View style={styles.header}>
+        <View style={styles.headerCenter}>
+          <Text style={styles.title}>Olá, {userData.name.split(' ')[0]}! 👋</Text>
+          <Text style={styles.subtitle}>Cidadão Ativo • {userData.joinedDaysAgo} dias no app</Text>
+        </View>
+        <View style={styles.headerActions}>
+          <TouchableOpacity style={styles.headerButton}>
+            <Icon name="notifications" size={24} color="#2E7D32" />
+            <View style={styles.notificationBadge}>
+              <Text style={styles.notificationBadgeText}>3</Text>
+            </View>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.headerAction} onPress={handleLogout}>
+            <Icon name="logout" size={24} color="#2E7D32" />
+          </TouchableOpacity>
+        </View>
+      </View>
+
       <ScrollView 
         style={styles.content} 
         showsVerticalScrollIndicator={false}
@@ -343,75 +469,79 @@ export default function ProfileScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
-        {/* Header */}
-        <Animated.View style={styles.header}>
-          <View style={styles.headerLeft}>
-            <Text style={styles.title}>Meu Perfil</Text>
-            <Text style={styles.subtitle}>Cidadão Ativo</Text>
-          </View>
-          <TouchableOpacity style={styles.settingsButton} onPress={handleLogout}>
-            <Icon name="logout" size={24} color="#2E7D32" />
-          </TouchableOpacity>
-        </Animated.View>
-
-        {/* Perfil do Usuário */}
+        {/* Card Principal do Usuário */}
         <Animated.View 
           entering={FadeIn.delay(200)}
-          style={styles.profileCard}
+          style={styles.mainProfileCard}
         >
-          <Animated.View 
-            entering={BounceIn.delay(300)}
-            style={styles.avatarContainer}
-          >
-            <View style={styles.avatar}>
-              {(userData as any).avatar ? (
-                <Image 
-                  source={{ uri: (userData as any).avatar }} 
-                  style={styles.avatarImage}
-                  resizeMode="cover"
-                />
-              ) : (
-                <Icon name="person" size={40} color="#2E7D32" />
-              )}
-            </View>
-            <View style={styles.levelBadge}>
-              <Text style={styles.levelText}>Nv. {userData.level}</Text>
-            </View>
-          </Animated.View>
-          
-          <Animated.View 
-            entering={SlideInRight.delay(400)}
-            style={styles.userInfo}
-          >
-            <Text style={styles.userName}>{userData.name}</Text>
-            <Text style={styles.userTitle}>Cidadão Ativo da Ilha do Governador</Text>
+          {/* Avatar e Info Básica */}
+          <View style={styles.profileHeader}>
             <Animated.View 
-              entering={FadeIn.delay(600)}
-              style={styles.pointsContainer}
+              entering={BounceIn.delay(300)}
+              style={styles.avatarContainer}
             >
-              <Icon name="stars" size={16} color="#FFD700" />
-              <Text style={styles.pointsText}>{userData.points.toLocaleString()} pontos</Text>
+              <View style={styles.avatar}>
+                {userData.avatar ? (
+                  <Image 
+                    source={{ uri: userData.avatar }} 
+                    style={styles.avatarImage}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <Icon name="person" size={32} color="#2E7D32" />
+                )}
+              </View>
+              <View style={styles.levelBadge}>
+                <Icon name="stars" size={12} color="#FFD700" />
+                <Text style={styles.levelText}>{userData.level}</Text>
+              </View>
             </Animated.View>
-          </Animated.View>
+            
+            <View style={styles.userMainInfo}>
+              <Text style={styles.userName}>{userData.name}</Text>
+              <Text style={styles.userTitle}>#{userData.ranking} • {userData.points.toLocaleString()} pontos</Text>
+              
+              {/* Barra de Progresso para Próximo Nível */}
+              <View style={styles.levelProgressContainer}>
+                <Text style={styles.levelProgressLabel}>Progresso para Nível {userData.level + 1}</Text>
+                <View style={styles.levelProgressBar}>
+                  <Animated.View 
+                    entering={FadeIn.delay(800)}
+                    style={[styles.levelProgressFill, { width: `${getProgressToNextLevel()}%` }]} 
+                  />
+                </View>
+                <Text style={styles.levelProgressText}>
+                  {userData.points} / {userData.nextLevelPoints}
+                </Text>
+              </View>
+            </View>
+          </View>
 
-          <Animated.View entering={BounceIn.delay(700)}>
-            <TouchableOpacity style={styles.shareButton}>
-              <Icon name="share" size={20} color="#2E7D32" />
-            </TouchableOpacity>
-          </Animated.View>
+          {/* Streak e Última Atividade */}
+          <View style={styles.activityRow}>
+            <View style={styles.streakContainer}>
+              <Icon name="local-fire-department" size={16} color="#FF5722" />
+              <Text style={styles.streakText}>{userData.streak} dias</Text>
+              <Text style={styles.streakLabel}>Sequência</Text>
+            </View>
+            <View style={styles.lastActivityContainer}>
+              <Icon name="schedule" size={16} color="#666" />
+              <Text style={styles.lastActivityText}>
+                Ativo {formatLastActivity(userData.lastActivity)}
+              </Text>
+            </View>
+          </View>
         </Animated.View>
 
-        {/* Estatísticas */}
-        <View style={styles.statsSection}>
-          <Text style={styles.sectionTitle}>Suas Estatísticas</Text>
-          <View style={styles.statsGrid}>
+        {/* Estatísticas Rápidas */}
+        <View style={styles.quickStatsSection}>
+          <Text style={styles.sectionTitle}>Estatísticas</Text>
+          <View style={styles.quickStatsGrid}>
             {isLoading ? (
-              // Loading placeholder
               Array.from({ length: 4 }).map((_, index) => (
                 <View key={index} style={[styles.statCard, styles.loadingCard]}>
                   <View style={styles.loadingDot} />
                   <View style={styles.loadingLine} />
-                  <View style={styles.loadingLineSmall} />
                 </View>
               ))
             ) : (
@@ -427,46 +557,74 @@ export default function ProfileScreen() {
         </View>
 
         {/* Badges Conquistadas */}
-        <View style={styles.badgesSection}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Badges Conquistadas</Text>
-            <View style={styles.badgeCount}>
-              <Text style={styles.badgeCountText}>{earnedBadges.length}</Text>
-            </View>
-          </View>
-          <View style={styles.badgesGrid}>
-            {earnedBadges.map((badge, index) => (
-              <AnimatedBadgeCard
-                key={badge.id}
-                badge={badge}
-                index={index}
-              />
-            ))}
-          </View>
-        </View>
-
-        {/* Próximas Badges */}
-        {nextBadges.length > 0 && (
+        {earnedBadges.length > 0 && (
           <View style={styles.badgesSection}>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Próximas Conquistas</Text>
-              <View style={styles.progressIndicator}>
-                <Icon name="trending-up" size={16} color="#FF9800" />
-              </View>
+              <Text style={styles.sectionTitle}>Conquistas ({earnedBadges.length}/{userBadges.length})</Text>
+              <TouchableOpacity onPress={() => router.push('/PointsGuideScreen')}>
+                <Text style={styles.seeAllText}>Ver todas</Text>
+              </TouchableOpacity>
             </View>
-            {nextBadges.map((badge, index) => (
-              <AnimatedProgressBadge
-                key={badge.id}
-                badge={badge}
-                index={index}
-              />
-            ))}
+            <View style={styles.badgesGrid}>
+              {earnedBadges.slice(0, 4).map((badge, index) => (
+                <AnimatedBadgeCard
+                  key={badge.id}
+                  badge={badge}
+                  index={index}
+                />
+              ))}
+            </View>
           </View>
         )}
 
-        {/* Ações */}
+        {/* Próximas Conquistas - Melhorado com base no PointsGuideScreen */}
+        {nextBadges.length > 0 && (
+          <View style={styles.nextBadgesSection}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Próximas Conquistas</Text>
+              <TouchableOpacity onPress={() => router.push('/PointsGuideScreen')}>
+                <Text style={styles.seeAllText}>Como ganhar</Text>
+              </TouchableOpacity>
+            </View>
+            <Text style={styles.sectionSubtitle}>
+              Continue contribuindo para desbloquear essas conquistas
+            </Text>
+            <View style={styles.achievementsGrid}>
+              {nextBadges.slice(0, 2).map((badge, index) => (
+                <AnimatedProgressBadge
+                  key={badge.id}
+                  badge={badge}
+                  index={index}
+                />
+              ))}
+            </View>
+          </View>
+        )}
+
+        {/* Atividade Recente */}
+        <View style={styles.recentActivitySection}>
+          <Text style={styles.sectionTitle}>Atividade Recente</Text>
+          {getRecentActivities().length > 0 ? (
+            getRecentActivities().map((activity, index) => (
+              <RecentActivityCard
+                key={activity.id}
+                activity={activity}
+                index={index}
+              />
+            ))
+          ) : (
+            <View style={styles.emptyState}>
+              <Icon name="timeline" size={32} color="#ccc" />
+              <Text style={styles.emptyStateText}>
+                Nenhuma atividade recente. Comece reportando um problema!
+              </Text>
+            </View>
+          )}
+        </View>
+
+        {/* Ações Rápidas */}
         <View style={styles.actionsSection}>
-          <Text style={styles.sectionTitle}>Ações Rápidas</Text>
+          <Text style={styles.sectionTitle}>Ações</Text>
           
           <Animated.View entering={FadeIn.delay(1500)}>
             <TouchableOpacity 
@@ -475,14 +633,14 @@ export default function ProfileScreen() {
             >
               <View style={styles.actionLeft}>
                 <View style={[styles.actionIcon, { backgroundColor: '#2196F3' + '20' }]}>
-                  <Icon name="history" size={20} color="#2196F3" />
+                  <Icon name="history" size={18} color="#2196F3" />
                 </View>
                 <View>
-                  <Text style={styles.actionText}>Histórico de Reportes</Text>
-                  <Text style={styles.actionSubtext}>Ver todos os seus reportes</Text>
+                  <Text style={styles.actionText}>Meus Reportes</Text>
+                  <Text style={styles.actionSubtext}>Ver histórico completo</Text>
                 </View>
               </View>
-              <Icon name="chevron-right" size={20} color="#666" />
+              <Icon name="chevron-right" size={18} color="#666" />
             </TouchableOpacity>
           </Animated.View>
           
@@ -493,52 +651,17 @@ export default function ProfileScreen() {
             >
               <View style={styles.actionLeft}>
                 <View style={[styles.actionIcon, { backgroundColor: '#FF9800' + '20' }]}>
-                  <Icon name="leaderboard" size={20} color="#FF9800" />
+                  <Icon name="leaderboard" size={18} color="#FF9800" />
                 </View>
                 <View>
-                  <Text style={styles.actionText}>Ranking da Cidade</Text>
+                  <Text style={styles.actionText}>Ranking</Text>
                   <Text style={styles.actionSubtext}>Você está em #{userData.ranking}º lugar</Text>
                 </View>
               </View>
-              <Icon name="chevron-right" size={20} color="#666" />
-            </TouchableOpacity>
-          </Animated.View>
-          
-          <Animated.View entering={FadeIn.delay(1700)}>
-            <TouchableOpacity 
-              style={styles.actionButton}
-              onPress={() => router.push('/PointsGuideScreen')}
-            >
-              <View style={styles.actionLeft}>
-                <View style={[styles.actionIcon, { backgroundColor: '#4CAF50' + '20' }]}>
-                  <Icon name="help" size={20} color="#4CAF50" />
-                </View>
-                <View>
-                  <Text style={styles.actionText}>Como Ganhar Pontos</Text>
-                  <Text style={styles.actionSubtext}>Dicas para subir no ranking</Text>
-                </View>
-              </View>
-              <Icon name="chevron-right" size={20} color="#666" />
+              <Icon name="chevron-right" size={18} color="#666" />
             </TouchableOpacity>
           </Animated.View>
 
-          <Animated.View entering={FadeIn.delay(1800)}>
-            <TouchableOpacity 
-              style={styles.actionButton}
-              onPress={() => router.push('/SettingsScreen')}
-            >
-              <View style={styles.actionLeft}>
-                <View style={[styles.actionIcon, { backgroundColor: '#9C27B0' + '20' }]}>
-                  <Icon name="settings" size={20} color="#9C27B0" />
-                </View>
-                <View>
-                  <Text style={styles.actionText}>Configurações</Text>
-                  <Text style={styles.actionSubtext}>Notificações e privacidade</Text>
-                </View>
-              </View>
-              <Icon name="chevron-right" size={20} color="#666" />
-            </TouchableOpacity>
-          </Animated.View>
         </View>
 
         <View style={{ height: 100 }} />
@@ -552,9 +675,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F8F9FA',
   },
-  content: {
-    flex: 1,
-  },
+  // Header - Consistente com ReportScreen
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -570,8 +691,25 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 16,
     borderBottomRightRadius: 16,
   },
-  headerLeft: {
+  headerButton: {
+    padding: 12,
+    backgroundColor: '#F5F5F5',
+    borderRadius: 12,
+    position: 'relative',
+  },
+  headerCenter: {
     flex: 1,
+    marginHorizontal: 16,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  headerAction: {
+    padding: 12,
+    backgroundColor: '#E8F5E8',
+    borderRadius: 12,
   },
   title: {
     fontSize: 20,
@@ -583,31 +721,49 @@ const styles = StyleSheet.create({
     color: '#666',
     marginTop: 2,
   },
-  settingsButton: {
-    padding: 12,
-    backgroundColor: '#E8F5E8',
-    borderRadius: 12,
+  notificationBadge: {
+    position: 'absolute',
+    top: 2,
+    right: 2,
+    backgroundColor: '#F44336',
+    borderRadius: 8,
+    minWidth: 16,
+    height: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  profileCard: {
+  notificationBadgeText: {
+    fontSize: 10,
+    color: 'white',
+    fontWeight: 'bold',
+  },
+  content: {
+    flex: 1,
+  },
+  mainProfileCard: {
     backgroundColor: 'white',
     margin: 16,
     borderRadius: 20,
-    padding: 24,
-    flexDirection: 'row',
-    alignItems: 'center',
+    padding: 20,
     elevation: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
     shadowRadius: 12,
   },
+  profileHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 16,
+  },
   avatarContainer: {
     position: 'relative',
+    marginRight: 16,
   },
   avatar: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     backgroundColor: '#E8F5E8',
     justifyContent: 'center',
     alignItems: 'center',
@@ -617,60 +773,97 @@ const styles = StyleSheet.create({
   avatarImage: {
     width: '100%',
     height: '100%',
-    borderRadius: 35,
+    borderRadius: 32,
   },
   levelBadge: {
     position: 'absolute',
-    bottom: -8,
-    right: -8,
+    bottom: -4,
+    right: -4,
     backgroundColor: '#FFD700',
-    borderRadius: 14,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    borderRadius: 12,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
     borderWidth: 2,
     borderColor: 'white',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
   },
   levelText: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: 'bold',
     color: '#333',
   },
-  userInfo: {
+  userMainInfo: {
     flex: 1,
-    marginLeft: 20,
   },
   userName: {
     fontSize: 20,
     fontWeight: 'bold',
     color: '#333',
+    marginBottom: 2,
   },
   userTitle: {
     fontSize: 14,
     color: '#666',
-    marginTop: 4,
+    marginBottom: 12,
   },
-  pointsContainer: {
+  levelProgressContainer: {
+    marginTop: 8,
+  },
+  levelProgressLabel: {
+    fontSize: 12,
+    color: '#666',
+    marginBottom: 6,
+  },
+  levelProgressBar: {
+    height: 6,
+    backgroundColor: '#E0E0E0',
+    borderRadius: 3,
+    marginBottom: 4,
+  },
+  levelProgressFill: {
+    height: '100%',
+    backgroundColor: '#4CAF50',
+    borderRadius: 3,
+  },
+  levelProgressText: {
+    fontSize: 11,
+    color: '#666',
+    textAlign: 'center',
+  },
+  activityRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#F0F0F0',
+  },
+  streakContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 12,
     gap: 6,
-    backgroundColor: '#FFF8E1',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    alignSelf: 'flex-start',
   },
-  pointsText: {
+  streakText: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#FF8F00',
+    fontWeight: 'bold',
+    color: '#FF5722',
   },
-  shareButton: {
-    padding: 12,
-    backgroundColor: '#F5F5F5',
-    borderRadius: 12,
+  streakLabel: {
+    fontSize: 12,
+    color: '#666',
   },
-  statsSection: {
+  lastActivityContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  lastActivityText: {
+    fontSize: 12,
+    color: '#666',
+  },
+  quickStatsSection: {
     margin: 16,
   },
   sectionTitle: {
@@ -685,25 +878,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 16,
   },
-  badgeCount: {
-    backgroundColor: '#2E7D32',
-    borderRadius: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    minWidth: 24,
-    alignItems: 'center',
+  sectionSubtitle: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 16,
   },
-  badgeCountText: {
+  seeAllText: {
     fontSize: 12,
-    fontWeight: 'bold',
-    color: 'white',
+    color: '#2E7D32',
+    fontWeight: '500',
   },
-  progressIndicator: {
-    backgroundColor: '#FF9800',
-    borderRadius: 12,
-    padding: 4,
-  },
-  statsGrid: {
+  quickStatsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 12,
@@ -711,7 +896,7 @@ const styles = StyleSheet.create({
   statCard: {
     backgroundColor: 'white',
     borderRadius: 16,
-    padding: 20,
+    padding: 16,
     alignItems: 'center',
     width: '47%',
     elevation: 4,
@@ -721,26 +906,20 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
   },
   statIcon: {
-    borderRadius: 24,
-    padding: 12,
-    marginBottom: 12,
+    borderRadius: 20,
+    padding: 10,
+    marginBottom: 8,
   },
   statValue: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#333',
+    marginBottom: 2,
   },
   statLabel: {
     fontSize: 12,
     color: '#666',
     textAlign: 'center',
-    marginTop: 4,
-  },
-  statSubtitle: {
-    fontSize: 10,
-    color: '#999',
-    textAlign: 'center',
-    marginTop: 2,
   },
   badgesSection: {
     margin: 16,
@@ -753,7 +932,7 @@ const styles = StyleSheet.create({
   badgeCard: {
     backgroundColor: 'white',
     borderRadius: 16,
-    padding: 20,
+    padding: 16,
     alignItems: 'center',
     width: '47%',
     elevation: 4,
@@ -764,78 +943,151 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   badgeIcon: {
-    borderRadius: 24,
-    padding: 12,
-    marginBottom: 12,
+    borderRadius: 20,
+    padding: 10,
+    marginBottom: 8,
   },
   badgeName: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: 'bold',
     color: '#333',
     textAlign: 'center',
+    marginBottom: 4,
   },
   badgeDescription: {
-    fontSize: 12,
+    fontSize: 11,
     color: '#666',
     textAlign: 'center',
-    marginTop: 4,
   },
   earnedIndicator: {
     position: 'absolute',
     top: 8,
     right: 8,
   },
-  nextBadgeCard: {
+  nextBadgesSection: {
+    margin: 16,
+  },
+  // Melhorado baseado no PointsGuideScreen
+  achievementsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  achievementCard: {
     backgroundColor: 'white',
     borderRadius: 16,
-    padding: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-    elevation: 4,
+    padding: 16,
+    width: '47%',
+    elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 8,
+    shadowRadius: 4,
+    opacity: 0.8,
   },
-  nextBadgeIcon: {
+  achievementCardActive: {
+    opacity: 1,
+    elevation: 4,
+  },
+  achievementIcon: {
+    width: 40,
+    height: 40,
     borderRadius: 20,
-    padding: 12,
-    marginRight: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
   },
-  nextBadgeInfo: {
+  achievementInfo: {
     flex: 1,
   },
-  nextBadgeName: {
-    fontSize: 16,
+  achievementTitle: {
+    fontSize: 14,
     fontWeight: '600',
+    color: '#666',
+    marginBottom: 4,
+  },
+  achievementTitleActive: {
     color: '#333',
   },
-  nextBadgeDescription: {
-    fontSize: 13,
+  achievementDescription: {
+    fontSize: 12,
     color: '#666',
-    marginTop: 2,
+    marginBottom: 8,
   },
-  progressContainer: {
+  achievementProgress: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 12,
-    gap: 12,
+    marginBottom: 8,
+    gap: 8,
   },
   progressBar: {
     flex: 1,
-    height: 8,
+    height: 4,
     backgroundColor: '#E0E0E0',
-    borderRadius: 4,
+    borderRadius: 2,
   },
   progressFill: {
     height: '100%',
-    borderRadius: 4,
+    borderRadius: 2,
   },
   progressText: {
-    fontSize: 13,
+    fontSize: 11,
     color: '#666',
-    fontWeight: '600',
+    fontWeight: '500',
+  },
+  achievementPoints: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  achievementPointsText: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    color: '#FF8F00',
+  },
+  recentActivitySection: {
+    margin: 16,
+  },
+  activityCard: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+  },
+  activityIcon: {
+    borderRadius: 12,
+    padding: 8,
+    marginRight: 12,
+  },
+  activityInfo: {
+    flex: 1,
+  },
+  activityTitle: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#333',
+  },
+  activityTime: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 2,
+  },
+  emptyState: {
+    alignItems: 'center',
+    paddingVertical: 32,
+  },
+  emptyStateText: {
+    fontSize: 14,
+    color: '#999',
+    textAlign: 'center',
+    marginTop: 8,
   },
   actionsSection: {
     margin: 16,
@@ -843,7 +1095,7 @@ const styles = StyleSheet.create({
   actionButton: {
     backgroundColor: 'white',
     borderRadius: 16,
-    padding: 20,
+    padding: 16,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -860,58 +1112,36 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   actionIcon: {
-    borderRadius: 16,
-    padding: 12,
-    marginRight: 16,
+    borderRadius: 12,
+    padding: 10,
+    marginRight: 12,
   },
   actionText: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
     color: '#333',
   },
   actionSubtext: {
-    fontSize: 13,
+    fontSize: 12,
     color: '#666',
     marginTop: 2,
   },
-  // Novos estilos para loading e error states
   loadingCard: {
     backgroundColor: '#F5F5F5',
     opacity: 0.6,
   },
   loadingDot: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     backgroundColor: '#E0E0E0',
-    marginBottom: 12,
+    marginBottom: 8,
   },
   loadingLine: {
     width: '70%',
-    height: 16,
-    borderRadius: 8,
+    height: 14,
+    borderRadius: 7,
     backgroundColor: '#E0E0E0',
     marginBottom: 4,
-  },
-  loadingLineSmall: {
-    width: '50%',
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: '#E0E0E0',
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 40,
-    backgroundColor: 'white',
-    borderRadius: 16,
-    margin: 8,
-  },
-  errorText: {
-    fontSize: 14,
-    color: '#F44336',
-    marginTop: 8,
-    textAlign: 'center',
   },
 });

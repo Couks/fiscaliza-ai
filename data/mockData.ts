@@ -10,6 +10,11 @@ export interface User {
   ranking: number;
   badges: Badge[];
   createdAt: string;
+  streak: number;
+  lastActivity: string;
+  totalComments: number;
+  joinedDaysAgo: number;
+  nextLevelPoints: number;
 }
 
 export interface Badge {
@@ -120,8 +125,13 @@ export const mockUsers: User[] = [
         earned: false,
         progress: 0,
       },
-    ],
-    createdAt: '2023-12-01',
+          ],
+      createdAt: '2023-12-01',
+      streak: 7,
+      lastActivity: '2024-01-15T14:30:00.000Z',
+      totalComments: 12,
+      joinedDaysAgo: 45,
+      nextLevelPoints: 1500,
   },
   {
     id: '2',
@@ -152,8 +162,13 @@ export const mockUsers: User[] = [
         earned: false,
         progress: 60,
       },
-    ],
-    createdAt: '2024-01-05',
+          ],
+      createdAt: '2024-01-05',
+      streak: 3,
+      lastActivity: '2024-01-14T19:15:00.000Z',
+      totalComments: 5,
+      joinedDaysAgo: 10,
+      nextLevelPoints: 1000,
   },
   {
     id: '3',
@@ -174,8 +189,13 @@ export const mockUsers: User[] = [
         earned: false,
         progress: 30,
       },
-    ],
-    createdAt: '2024-01-18',
+          ],
+      createdAt: '2024-01-18',
+      streak: 1,
+      lastActivity: '2024-01-12T16:20:00.000Z',
+      totalComments: 2,
+      joinedDaysAgo: 2,
+      nextLevelPoints: 500,
   },
 ];
 

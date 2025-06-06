@@ -8,22 +8,22 @@ import * as Location from 'expo-location';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
-  Alert,
-  Dimensions,
-  Image,
-  Modal,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View
+    Alert,
+    Dimensions,
+    Image,
+    Modal,
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View
 } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import Animated, {
-  useSharedValue,
-  withTiming
+    useSharedValue,
+    withTiming
 } from 'react-native-reanimated';
 
 const { width } = Dimensions.get('window');
@@ -58,15 +58,6 @@ const categoryMapping: { [key: string]: 'road' | 'lighting' | 'cleaning' | 'othe
   'others': 'others',
 };
 
-/**
- * Integração completa entre ReportScreen, mockApi e authStore:
- * - Coleta dados do formulário
- * - Mapeia categorias do UI para o modelo de dados
- * - Salva o problema no mockData via mockApi
- * - Atualiza pontos do usuário no authStore
- * - Fornece feedback visual ao usuário
- */
-
 export default function ReportScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
@@ -76,6 +67,7 @@ export default function ReportScreen() {
   const problemsStore = useProblemsStore();
   const statsStore = useStatsStore();
   
+  // Form states
   const [description, setDescription] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedUrgency, setSelectedUrgency] = useState('medium');
@@ -91,6 +83,9 @@ export default function ReportScreen() {
       longitudeDelta: 0.0421,
     }
   );
+  
+  // Stepper states
+  const [currentStep, setCurrentStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPhotoModal, setShowPhotoModal] = useState(false);
   const [showMapModal, setShowMapModal] = useState(false);
@@ -98,23 +93,85 @@ export default function ReportScreen() {
   // Animated values
   const progressValue = useSharedValue(0);
 
+  const steps = React.useMemo(() => [
+    { 
+      id: 'location',
+      title: 'Localização', 
+      subtitle: 'Onde está o problema?',
+      icon: 'location-on', 
+      completed: !!selectedLocation,
+      required: true
+    },
+    { 
+      id: 'description',
+      title: 'Descrição', 
+      subtitle: 'Descreva o problema',
+      icon: 'description', 
+      completed: !!description.trim(),
+      required: true
+    },
+    { 
+      id: 'category',
+      title: 'Categoria', 
+      subtitle: 'Tipo do problema',
+      icon: 'category', 
+      completed: !!selectedCategory,
+      required: true
+    },
+    { 
+      id: 'urgency',
+      title: 'Urgência', 
+      subtitle: 'Nível de prioridade',
+      icon: 'priority-high', 
+      completed: true,
+      required: false
+    },
+    { 
+      id: 'photos',
+      title: 'Fotos', 
+      subtitle: 'Evidências (opcional)',
+      icon: 'camera-alt', 
+      completed: true,
+      required: false
+    },
+    { 
+      id: 'review',
+      title: 'Revisar', 
+      subtitle: 'Confirmar e enviar',
+      icon: 'send', 
+      completed: true,
+      required: false
+    },
+  ], [selectedLocation, description, selectedCategory]);
+
+  const currentStepData = steps[currentStep];
+  const isCurrentStepValid = currentStepData?.completed || !currentStepData?.required;
+  const canGoNext = currentStep < steps.length - 1 && isCurrentStepValid;
+  const canGoPrevious = currentStep > 0;
   const isFormValid = description.trim() && selectedCategory && selectedLocation;
 
-  const steps = React.useMemo(() => [
-    { title: 'Localização', icon: 'location-on', completed: !!selectedLocation },
-    { title: 'Descrição', icon: 'description', completed: !!description.trim() },
-    { title: 'Categoria', icon: 'category', completed: !!selectedCategory },
-    { title: 'Finalizar', icon: 'send', completed: isFormValid },
-  ], [selectedLocation, description, selectedCategory, isFormValid]);
-
   useEffect(() => {
-    // Update progress based on completed steps
-    const completedSteps = steps.filter(step => step.completed).length;
-    const progress = (completedSteps / steps.length) * 100;
+    // Update progress based on current step
+    const progress = ((currentStep + 1) / steps.length) * 100;
     progressValue.value = withTiming(progress, { duration: 300 });
-  }, [selectedLocation, description, selectedCategory, isFormValid, progressValue, steps]);
+  }, [currentStep, progressValue, steps]);
 
+  // Navigation functions
+  const goToNextStep = () => {
+    if (canGoNext) {
+      setCurrentStep(prev => prev + 1);
+    }
+  };
 
+  const goToPreviousStep = () => {
+    if (canGoPrevious) {
+      setCurrentStep(prev => prev - 1);
+    }
+  };
+
+  const goToStep = (stepIndex: number) => {
+    setCurrentStep(stepIndex);
+  };
 
   const requestLocationPermission = async () => {
     try {
@@ -212,6 +269,7 @@ export default function ReportScreen() {
   };
 
   const handleSubmit = async () => {
+    // Validação final antes do envio
     if (!description.trim()) {
       Alert.alert('Atenção', 'Por favor, descreva o problema encontrado.');
       return;
@@ -258,31 +316,31 @@ export default function ReportScreen() {
         reportedBy: user.id,
       };
 
-             console.log('Enviando reporte:', problemData);
-       console.log('Usuário atual:', user);
+      console.log('Enviando reporte:', problemData);
+      console.log('Usuário atual:', user);
 
-             // Chamar a API para criar o problema
-       const response = await problemsApi.createProblem(problemData);
+      // Chamar a API para criar o problema
+      const response = await problemsApi.createProblem(problemData);
 
-       if (response.success && response.data) {
-         // Calcular pontos baseado na categoria e urgência
-         let points = 10; // Base
-         if (selectedUrgency === 'high') points += 15;
-         else if (selectedUrgency === 'medium') points += 10;
-         else points += 5;
-         
-         if (photos.length > 0) points += 5;
+      if (response.success && response.data) {
+        // Calcular pontos baseado na categoria e urgência
+        let points = 10; // Base
+        if (selectedUrgency === 'high') points += 15;
+        else if (selectedUrgency === 'medium') points += 10;
+        else points += 5;
+        
+        if (photos.length > 0) points += 5;
 
-         // Atualizar pontos do usuário
-         await useAuthStore.getState().updateUser({ 
-           points: user.points + points 
-         });
+        // Atualizar pontos do usuário
+        await useAuthStore.getState().updateUser({ 
+          points: user.points + points 
+        });
 
-         // Notificar stores sobre o novo report
-         problemsStore.notifyNewReport(response.data);
-         statsStore.notifyNewReport(user.id);
+        // Notificar stores sobre o novo report
+        problemsStore.notifyNewReport(response.data);
+        statsStore.notifyNewReport(user.id);
 
-         setIsSubmitting(false);
+        setIsSubmitting(false);
 
         Alert.alert(
           'Reporte Enviado! 🎉',
@@ -327,6 +385,7 @@ export default function ReportScreen() {
     setSelectedUrgency('medium');
     setPhotos([]);
     setSelectedLocation(params.userLocation ? JSON.parse(params.userLocation as string) : null);
+    setCurrentStep(0);
   };
 
   const getLocationText = () => {
@@ -334,203 +393,355 @@ export default function ReportScreen() {
     return `Lat: ${selectedLocation.latitude.toFixed(6)}, Lng: ${selectedLocation.longitude.toFixed(6)}`;
   };
 
+  // Step Content Renderers
+  const renderLocationStep = () => (
+    <View style={styles.stepContainer}>
+      <View style={styles.stepHeader}>
+        <MaterialIcons name="location-on" size={32} color="#2E7D32" />
+        <Text style={styles.stepTitle}>Localização do Problema</Text>
+        <Text style={styles.stepDescription}>
+          Selecione onde está localizado o problema que você deseja reportar
+        </Text>
+      </View>
+
+      <TouchableOpacity 
+        style={[styles.locationCard, !selectedLocation && styles.locationCardEmpty]}
+        onPress={() => setShowMapModal(true)}
+      >
+        <MaterialIcons name="location-on" size={24} color={selectedLocation ? "#2E7D32" : "#999"} />
+        <View style={styles.locationInfo}>
+          <Text style={styles.locationTitle}>
+            {selectedLocation ? 'Local Selecionado' : 'Selecionar Local'}
+          </Text>
+          <Text style={[styles.locationAddress, !selectedLocation && styles.locationAddressEmpty]}>
+            {getLocationText()}
+          </Text>
+        </View>
+        <MaterialIcons name="edit" size={20} color="#2E7D32" />
+      </TouchableOpacity>
+
+      <TouchableOpacity onPress={getCurrentLocation} style={styles.myLocationButton}>
+        <MaterialIcons name="my-location" size={20} color="#2E7D32" />
+        <Text style={styles.myLocationText}>Usar Minha Localização Atual</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
+  const renderDescriptionStep = () => (
+    <View style={styles.stepContainer}>
+      <View style={styles.stepHeader}>
+        <MaterialIcons name="description" size={32} color="#2E7D32" />
+        <Text style={styles.stepTitle}>Descrição do Problema</Text>
+        <Text style={styles.stepDescription}>
+          Descreva o problema de forma clara e objetiva
+        </Text>
+      </View>
+
+      <TextInput
+        style={[styles.textInput, description.trim() && styles.textInputFilled]}
+        placeholder="Ex: Buraco grande na pista, causando risco para veículos..."
+        value={description}
+        onChangeText={setDescription}
+        multiline
+        numberOfLines={6}
+        textAlignVertical="top"
+        maxLength={500}
+        autoFocus
+      />
+      <Text style={styles.charCount}>{description.length}/500</Text>
+    </View>
+  );
+
+  const renderCategoryStep = () => (
+    <View style={styles.stepContainer}>
+      <View style={styles.stepHeader}>
+        <MaterialIcons name="category" size={32} color="#2E7D32" />
+        <Text style={styles.stepTitle}>Categoria do Problema</Text>
+        <Text style={styles.stepDescription}>
+          Selecione a categoria que melhor se enquadra no problema
+        </Text>
+      </View>
+
+      <View style={styles.categoriesGrid}>
+        {categories.map((category) => (
+          <TouchableOpacity
+            key={category.id}
+            style={[
+              styles.categoryCard,
+              selectedCategory === category.id && styles.categoryCardSelected
+            ]}
+            onPress={() => setSelectedCategory(category.id)}
+          >
+            <View style={[styles.categoryIcon, { backgroundColor: category.color + '20' }]}>
+              <MaterialIcons name={category.icon as any} size={28} color={category.color} />
+            </View>
+            <Text style={[
+              styles.categoryName,
+              selectedCategory === category.id && styles.categoryNameSelected
+            ]}>
+              {category.name}
+            </Text>
+            {selectedCategory === category.id && (
+              <View style={styles.selectedIndicator}>
+                <MaterialIcons name="check-circle" size={20} color="#2E7D32" />
+              </View>
+            )}
+          </TouchableOpacity>
+        ))}
+      </View>
+    </View>
+  );
+
+  const renderUrgencyStep = () => (
+    <View style={styles.stepContainer}>
+      <View style={styles.stepHeader}>
+        <MaterialIcons name="priority-high" size={32} color="#2E7D32" />
+        <Text style={styles.stepTitle}>Nível de Urgência</Text>
+        <Text style={styles.stepDescription}>
+          Avalie o quão urgente é resolver este problema
+        </Text>
+      </View>
+
+      <View style={styles.urgencyContainer}>
+        {urgencyLevels.map((level) => (
+          <TouchableOpacity
+            key={level.id}
+            style={[
+              styles.urgencyButton,
+              selectedUrgency === level.id && [styles.urgencyButtonSelected, { borderColor: level.color }]
+            ]}
+            onPress={() => setSelectedUrgency(level.id)}
+          >
+            <View style={[styles.urgencyDot, { backgroundColor: level.color }]} />
+            <View style={styles.urgencyInfo}>
+              <Text style={[
+                styles.urgencyName,
+                selectedUrgency === level.id && styles.urgencyNameSelected
+              ]}>
+                {level.name}
+              </Text>
+              <Text style={styles.urgencyDescription}>{level.description}</Text>
+            </View>
+            {selectedUrgency === level.id && (
+              <MaterialIcons name="radio-button-checked" size={24} color={level.color} />
+            )}
+          </TouchableOpacity>
+        ))}
+      </View>
+    </View>
+  );
+
+  const renderPhotosStep = () => (
+    <View style={styles.stepContainer}>
+      <View style={styles.stepHeader}>
+        <MaterialIcons name="camera-alt" size={32} color="#2E7D32" />
+        <Text style={styles.stepTitle}>Fotos do Problema</Text>
+        <Text style={styles.stepDescription}>
+          Adicione fotos para ajudar na análise do problema (opcional)
+        </Text>
+      </View>
+      
+      {photos.length > 0 && (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.photosContainer}>
+          {photos.map((photo, index) => (
+            <View key={index} style={styles.photoItem}>
+              <Image source={{ uri: photo.uri }} style={styles.photoThumbnail} />
+              <TouchableOpacity 
+                style={styles.removePhotoButton}
+                onPress={() => removePhoto(index)}
+              >
+                <MaterialIcons name="close" size={16} color="white" />
+              </TouchableOpacity>
+            </View>
+          ))}
+        </ScrollView>
+      )}
+
+      <TouchableOpacity 
+        style={styles.addPhotoButton} 
+        onPress={() => setShowPhotoModal(true)}
+      >
+        <MaterialIcons name="add-a-photo" size={24} color="#2E7D32" />
+        <Text style={styles.addPhotoText}>
+          {photos.length === 0 ? 'Adicionar Fotos' : 'Adicionar Mais Fotos'}
+        </Text>
+      </TouchableOpacity>
+    </View>
+  );
+
+  const renderReviewStep = () => (
+    <View style={styles.stepContainer}>
+      <View style={styles.stepHeader}>
+        <MaterialIcons name="send" size={32} color="#2E7D32" />
+        <Text style={styles.stepTitle}>Revisar Informações</Text>
+        <Text style={styles.stepDescription}>
+          Confira todos os dados antes de enviar seu reporte
+        </Text>
+      </View>
+
+      <View style={styles.reviewContainer}>
+        <View style={styles.reviewItem}>
+          <Text style={styles.reviewLabel}>Localização:</Text>
+          <Text style={styles.reviewValue}>{getLocationText()}</Text>
+        </View>
+
+        <View style={styles.reviewItem}>
+          <Text style={styles.reviewLabel}>Descrição:</Text>
+          <Text style={styles.reviewValue}>{description}</Text>
+        </View>
+
+        <View style={styles.reviewItem}>
+          <Text style={styles.reviewLabel}>Categoria:</Text>
+          <Text style={styles.reviewValue}>
+            {categories.find(c => c.id === selectedCategory)?.name}
+          </Text>
+        </View>
+
+        <View style={styles.reviewItem}>
+          <Text style={styles.reviewLabel}>Urgência:</Text>
+          <Text style={styles.reviewValue}>
+            {urgencyLevels.find(u => u.id === selectedUrgency)?.name}
+          </Text>
+        </View>
+
+        <View style={styles.reviewItem}>
+          <Text style={styles.reviewLabel}>Fotos:</Text>
+          <Text style={styles.reviewValue}>{photos.length} foto(s)</Text>
+        </View>
+      </View>
+    </View>
+  );
+
+  const renderStepContent = () => {
+    switch (currentStep) {
+      case 0: return renderLocationStep();
+      case 1: return renderDescriptionStep();
+      case 2: return renderCategoryStep();
+      case 3: return renderUrgencyStep();
+      case 4: return renderPhotosStep();
+      case 5: return renderReviewStep();
+      default: return null;
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.content}>
-        <ScrollView showsVerticalScrollIndicator={false}>
-          {/* Header */}
-          <View style={styles.header}>
-            <TouchableOpacity onPress={() => router.back()}>
-              <MaterialIcons name="arrow-back" size={24} color="#2E7D32" />
-            </TouchableOpacity>
-            <Text style={styles.title}>Reportar Problema</Text>
-            <TouchableOpacity onPress={() => Alert.alert('Ajuda', 'Descreva o problema de forma clara e selecione a categoria adequada.')}>
-              <MaterialIcons name="help-outline" size={24} color="#2E7D32" />
-            </TouchableOpacity>
-          </View>
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <MaterialIcons name="arrow-back" size={24} color="#2E7D32" />
+        </TouchableOpacity>
+        <View style={styles.headerCenter}>
+          <Text style={styles.title}>Reportar Problema</Text>
+          <Text style={styles.subtitle}>{currentStepData.subtitle}</Text>
+        </View>
+        <TouchableOpacity 
+          style={styles.headerAction}
+          onPress={() => Alert.alert('Ajuda', 'Siga os passos para reportar o problema de forma completa.')}
+        >
+          <MaterialIcons name="help-outline" size={24} color="#2E7D32" />
+        </TouchableOpacity>
+      </View>
 
-          {/* Progress Indicator */}
-          <View style={styles.progressContainer}>
-            <View style={styles.progressBar}>
-              <View style={[styles.progressFill, { width: `${isFormValid ? 100 : 33}%` }]} />
-            </View>
-            <Text style={styles.progressText}>
-              {isFormValid ? 'Pronto para enviar!' : 'Preencha os campos obrigatórios'}
-            </Text>
-          </View>
-
-          {/* Localização */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>
-              Localização do Problema <Text style={styles.required}>*</Text>
-            </Text>
-            <TouchableOpacity 
-              style={[styles.locationCard, !selectedLocation && styles.locationCardEmpty]}
-              onPress={() => setShowMapModal(true)}
-            >
-              <MaterialIcons name="location-on" size={24} color={selectedLocation ? "#2E7D32" : "#999"} />
-              <View style={styles.locationInfo}>
-                <Text style={styles.locationTitle}>
-                  {selectedLocation ? 'Local Selecionado' : 'Selecionar Local'}
-                </Text>
-                <Text style={[styles.locationAddress, !selectedLocation && styles.locationAddressEmpty]}>
-                  {getLocationText()}
-                </Text>
-              </View>
-              <View style={styles.locationActions}>
-                <TouchableOpacity onPress={getCurrentLocation} style={styles.locationButton}>
-                  <MaterialIcons name="my-location" size={18} color="#2E7D32" />
-                </TouchableOpacity>
-                <MaterialIcons name="edit" size={18} color="#2E7D32" />
-              </View>
-            </TouchableOpacity>
-          </View>
-
-          {/* Descrição */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>
-              Descrição do Problema <Text style={styles.required}>*</Text>
-            </Text>
-            <TextInput
-              style={[styles.textInput, description.trim() && styles.textInputFilled]}
-              placeholder="Ex: Buraco grande na pista, causando risco para veículos..."
-              value={description}
-              onChangeText={setDescription}
-              multiline
-              numberOfLines={4}
-              textAlignVertical="top"
-              maxLength={500}
+      {/* Stepper Indicator */}
+      <View style={styles.stepperContainer}>
+        <View style={styles.stepperHeader}>
+          <Text style={styles.stepCounter}>{currentStep + 1} de {steps.length}</Text>
+          <Text style={styles.stepTitle}>{currentStepData.title}</Text>
+        </View>
+        
+        <View style={styles.stepperProgress}>
+          <View style={styles.progressTrack}>
+            <Animated.View 
+              style={[
+                styles.progressFill, 
+                { width: `${((currentStep + 1) / steps.length) * 100}%` }
+              ]} 
             />
-            <Text style={styles.charCount}>{description.length}/500</Text>
           </View>
+        </View>
 
-          {/* Categorias */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>
-              Categoria <Text style={styles.required}>*</Text>
-            </Text>
-            <View style={styles.categoriesGrid}>
-              {categories.map((category) => (
-                <TouchableOpacity
-                  key={category.id}
-                  style={[
-                    styles.categoryCard,
-                    selectedCategory === category.id && styles.categoryCardSelected
-                  ]}
-                  onPress={() => setSelectedCategory(category.id)}
-                >
-                  <View style={[styles.categoryIcon, { backgroundColor: category.color + '20' }]}>
-                    <MaterialIcons name={category.icon as any} size={28} color={category.color} />
-                  </View>
-                  <Text style={[
-                    styles.categoryName,
-                    selectedCategory === category.id && styles.categoryNameSelected
-                  ]}>
-                    {category.name}
-                  </Text>
-                  {selectedCategory === category.id && (
-                    <View style={styles.selectedIndicator}>
-                      <MaterialIcons name="check-circle" size={16} color="#2E7D32" />
-                    </View>
-                  )}
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-
-          {/* Nível de Urgência */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Nível de Urgência</Text>
-            <View style={styles.urgencyContainer}>
-              {urgencyLevels.map((level) => (
-                <TouchableOpacity
-                  key={level.id}
-                  style={[
-                    styles.urgencyButton,
-                    selectedUrgency === level.id && [styles.urgencyButtonSelected, { borderColor: level.color }]
-                  ]}
-                  onPress={() => setSelectedUrgency(level.id)}
-                >
-                  <View style={[styles.urgencyDot, { backgroundColor: level.color }]} />
-                  <View style={styles.urgencyInfo}>
-                    <Text style={[
-                      styles.urgencyName,
-                      selectedUrgency === level.id && styles.urgencyNameSelected
-                    ]}>
-                      {level.name}
-                    </Text>
-                    <Text style={styles.urgencyDescription}>{level.description}</Text>
-                  </View>
-                  {selectedUrgency === level.id && (
-                    <MaterialIcons name="radio-button-checked" size={20} color={level.color} />
-                  )}
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-
-          {/* Fotos */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>
-              Fotos {photos.length > 0 && `(${photos.length})`}
-            </Text>
-            
-            {photos.length > 0 && (
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.photosContainer}>
-                {photos.map((photo, index) => (
-                  <View key={index} style={styles.photoItem}>
-                    <Image source={{ uri: photo.uri }} style={styles.photoThumbnail} />
-                    <TouchableOpacity 
-                      style={styles.removePhotoButton}
-                      onPress={() => removePhoto(index)}
-                    >
-                      <MaterialIcons name="close" size={16} color="white" />
-                    </TouchableOpacity>
-                  </View>
-                ))}
-              </ScrollView>
-            )}
-
-            <TouchableOpacity 
-              style={styles.addPhotoButton} 
-              onPress={() => setShowPhotoModal(true)}
+        <View style={styles.stepperDots}>
+          {steps.map((step, index) => (
+            <TouchableOpacity
+              key={step.id}
+              style={[
+                styles.stepDot,
+                index <= currentStep && styles.stepDotActive,
+                index === currentStep && styles.stepDotCurrent
+              ]}
+              onPress={() => goToStep(index)}
             >
-              <MaterialIcons name="add-a-photo" size={24} color="#2E7D32" />
-              <Text style={styles.addPhotoText}>
-                {photos.length === 0 ? 'Adicionar Fotos' : 'Adicionar Mais Fotos'}
-              </Text>
+              <MaterialIcons 
+                name={step.icon as any} 
+                size={16} 
+                color={index <= currentStep ? 'white' : '#999'} 
+              />
             </TouchableOpacity>
-          </View>
+          ))}
+        </View>
+      </View>
 
-          <View style={{ height: 100 }} />
+      {/* Step Content */}
+      <View style={styles.content}>
+        <ScrollView showsVerticalScrollIndicator={false} style={styles.scrollContent}>
+          {renderStepContent()}
+          <View style={{ height: 120 }} />
         </ScrollView>
       </View>
 
-      {/* Botão de Envio Fixo */}
+      {/* Navigation Footer */}
       <View style={styles.footer}>
-        <TouchableOpacity 
-          style={[
-            styles.submitButton,
-            !isFormValid && styles.submitButtonDisabled,
-            isSubmitting && styles.submitButtonLoading
-          ]}
-          onPress={handleSubmit}
-          disabled={!isFormValid || isSubmitting}
-        >
-          {isSubmitting ? (
-            <>
-              <Animated.View style={styles.loadingSpinner}>
-                <MaterialIcons name="hourglass-empty" size={20} color="white" />
-              </Animated.View>
-              <Text style={styles.submitButtonText}>Enviando...</Text>
-            </>
-          ) : (
-            <>
-              <MaterialIcons name="send" size={20} color="white" />
-              <Text style={styles.submitButtonText}>Enviar Reporte</Text>
-            </>
+        <View style={styles.navigationContainer}>
+          {canGoPrevious && (
+            <TouchableOpacity 
+              style={styles.navigationButton}
+              onPress={goToPreviousStep}
+            >
+              <MaterialIcons name="arrow-back" size={20} color="#2E7D32" />
+              <Text style={styles.navigationButtonText}>Anterior</Text>
+            </TouchableOpacity>
           )}
-        </TouchableOpacity>
+          
+          <View style={styles.navigationSpacer} />
+          
+          {currentStep < steps.length - 1 ? (
+            <TouchableOpacity 
+              style={[
+                styles.primaryButton,
+                !isCurrentStepValid && styles.primaryButtonDisabled
+              ]}
+              onPress={goToNextStep}
+              disabled={!isCurrentStepValid}
+            >
+              <Text style={styles.primaryButtonText}>Próximo</Text>
+              <MaterialIcons name="arrow-forward" size={20} color="white" />
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity 
+              style={[
+                styles.primaryButton,
+                (!isFormValid || isSubmitting) && styles.primaryButtonDisabled
+              ]}
+              onPress={handleSubmit}
+              disabled={!isFormValid || isSubmitting}
+            >
+              {isSubmitting ? (
+                <>
+                  <Animated.View style={styles.loadingSpinner}>
+                    <MaterialIcons name="hourglass-empty" size={20} color="white" />
+                  </Animated.View>
+                  <Text style={styles.primaryButtonText}>Enviando...</Text>
+                </>
+              ) : (
+                <>
+                  <MaterialIcons name="send" size={20} color="white" />
+                  <Text style={styles.primaryButtonText}>Enviar</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
 
       {/* Modal de Mapa para Seleção de Localização */}
@@ -616,9 +827,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F8F9FA',
   },
-  content: {
-    flex: 1,
-  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -626,58 +834,177 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 16,
     backgroundColor: 'white',
-    elevation: 2,
+    elevation: 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowRadius: 8,
+    borderBottomLeftRadius: 16,
+    borderBottomRightRadius: 16,
+  },
+  backButton: {
+    padding: 12,
+    backgroundColor: '#F5F5F5',
+    borderRadius: 12,
+    marginRight: 16,
+  },
+  headerCenter: {
+    flex: 1,
+  },
+  headerAction: {
+    padding: 12,
+    backgroundColor: '#E8F5E8',
+    borderRadius: 12,
   },
   title: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#2E7D32',
   },
-  progressContainer: {
-    backgroundColor: 'white',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
+  subtitle: {
+    fontSize: 14,
+    color: '#666',
+    marginTop: 2,
   },
-  progressBar: {
+  stepperContainer: {
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+  },
+  stepperHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  stepCounter: {
+    fontSize: 14,
+    color: '#666',
+    fontWeight: '500',
+  },
+  stepTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+  },
+  stepperProgress: {
+    marginBottom: 16,
+  },
+  progressTrack: {
     height: 4,
     backgroundColor: '#E0E0E0',
     borderRadius: 2,
-    marginBottom: 8,
   },
   progressFill: {
     height: '100%',
     backgroundColor: '#2E7D32',
     borderRadius: 2,
   },
-  progressText: {
-    fontSize: 12,
+  stepperDots: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  stepDot: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#E0E0E0',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  stepDotActive: {
+    backgroundColor: '#2E7D32',
+  },
+  stepDotCurrent: {
+    backgroundColor: '#4CAF50',
+    transform: [{ scale: 1.1 }],
+  },
+  content: {
+    flex: 1,
+  },
+  scrollContent: {
+    flex: 1,
+  },
+  stepContainer: {
+    padding: 20,
+  },
+  stepHeader: {
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  stepDescription: {
+    fontSize: 16,
     color: '#666',
     textAlign: 'center',
+    marginTop: 8,
+    lineHeight: 24,
   },
-  section: {
-    margin: 16,
+  locationCard: {
+    backgroundColor: 'white',
+    borderRadius: 16,
+    padding: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+    borderWidth: 2,
+    borderColor: 'transparent',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    marginBottom: 16,
   },
-  sectionTitle: {
+  locationCardEmpty: {
+    borderColor: '#E0E0E0',
+    borderStyle: 'dashed',
+  },
+  locationInfo: {
+    flex: 1,
+  },
+  locationTitle: {
     fontSize: 16,
     fontWeight: '600',
     color: '#333',
-    marginBottom: 12,
   },
-  required: {
-    color: '#F44336',
+  locationAddress: {
+    fontSize: 14,
+    color: '#666',
+    marginTop: 4,
+  },
+  locationAddressEmpty: {
+    color: '#999',
+    fontStyle: 'italic',
+  },
+  myLocationButton: {
+    backgroundColor: '#E8F5E8',
+    borderRadius: 12,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  myLocationText: {
+    fontSize: 16,
+    color: '#2E7D32',
+    fontWeight: '500',
   },
   textInput: {
     backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: 16,
+    padding: 20,
     fontSize: 16,
     borderWidth: 2,
     borderColor: '#E0E0E0',
-    minHeight: 100,
+    minHeight: 120,
+    textAlignVertical: 'top',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    marginBottom: 8,
   },
   textInputFilled: {
     borderColor: '#2E7D32',
@@ -691,26 +1018,32 @@ const styles = StyleSheet.create({
   categoriesGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
+    gap: 16,
+    justifyContent: 'space-around',
   },
   categoryCard: {
     backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: 16,
+    padding: 20,
     alignItems: 'center',
-    width: (width - 56) / 2,
+    width: (width - 60) / 2,
     borderWidth: 2,
     borderColor: 'transparent',
     position: 'relative',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
   categoryCardSelected: {
     borderColor: '#2E7D32',
     backgroundColor: '#E8F5E8',
   },
   categoryIcon: {
-    borderRadius: 25,
-    padding: 12,
-    marginBottom: 8,
+    borderRadius: 30,
+    padding: 16,
+    marginBottom: 12,
   },
   categoryName: {
     fontSize: 14,
@@ -724,30 +1057,35 @@ const styles = StyleSheet.create({
   },
   selectedIndicator: {
     position: 'absolute',
-    top: 8,
-    right: 8,
+    top: 12,
+    right: 12,
   },
   urgencyContainer: {
-    gap: 8,
+    gap: 12,
   },
   urgencyButton: {
     backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: 16,
+    padding: 20,
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 2,
     borderColor: 'transparent',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
   urgencyButtonSelected: {
     backgroundColor: '#F8F9FA',
     borderWidth: 2,
   },
   urgencyDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    marginRight: 12,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    marginRight: 16,
   },
   urgencyInfo: {
     flex: 1,
@@ -761,110 +1099,119 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   urgencyDescription: {
-    fontSize: 12,
+    fontSize: 14,
     color: '#666',
-    marginTop: 2,
+    marginTop: 4,
   },
   photosContainer: {
-    marginBottom: 12,
+    marginBottom: 16,
   },
   photoItem: {
     position: 'relative',
     marginRight: 12,
   },
   photoThumbnail: {
-    width: 80,
-    height: 80,
-    borderRadius: 8,
+    width: 100,
+    height: 100,
+    borderRadius: 12,
   },
   removePhotoButton: {
     position: 'absolute',
-    top: -6,
-    right: -6,
+    top: -8,
+    right: -8,
     backgroundColor: '#F44336',
-    borderRadius: 12,
-    width: 24,
-    height: 24,
+    borderRadius: 16,
+    width: 32,
+    height: 32,
     justifyContent: 'center',
     alignItems: 'center',
   },
   addPhotoButton: {
     backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: 16,
+    padding: 20,
     alignItems: 'center',
     borderWidth: 2,
     borderColor: '#E0E0E0',
     borderStyle: 'dashed',
   },
   addPhotoText: {
-    fontSize: 14,
+    fontSize: 16,
     color: '#2E7D32',
     marginTop: 8,
     fontWeight: '500',
   },
-  locationCard: {
+  reviewContainer: {
+    gap: 16,
+  },
+  reviewItem: {
     backgroundColor: 'white',
     borderRadius: 12,
     padding: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    borderWidth: 2,
-    borderColor: 'transparent',
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
   },
-  locationInfo: {
-    flex: 1,
-  },
-  locationTitle: {
+  reviewLabel: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#333',
-  },
-  locationAddress: {
-    fontSize: 12,
     color: '#666',
-    marginTop: 2,
+    marginBottom: 4,
   },
-  locationActions: {
-    flexDirection: 'row',
-    gap: 8,
-    alignItems: 'center',
-  },
-  locationButton: {
-    padding: 8,
-    backgroundColor: '#E8F5E8',
-    borderRadius: 8,
+  reviewValue: {
+    fontSize: 16,
+    color: '#333',
+    lineHeight: 22,
   },
   footer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: 16,
     backgroundColor: 'white',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
     elevation: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
   },
-  submitButton: {
-    backgroundColor: '#2E7D32',
-    borderRadius: 12,
-    padding: 16,
+  navigationContainer: {
     flexDirection: 'row',
-    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 16,
+  },
+  navigationButton: {
+    flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: '#F5F5F5',
+    borderRadius: 12,
   },
-  submitButtonDisabled: {
+  navigationButtonText: {
+    fontSize: 16,
+    color: '#2E7D32',
+    fontWeight: '500',
+  },
+  navigationSpacer: {
+    flex: 1,
+  },
+  primaryButton: {
+    backgroundColor: '#2E7D32',
+    borderRadius: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    minWidth: 120,
+    justifyContent: 'center',
+  },
+  primaryButtonDisabled: {
     backgroundColor: '#BDBDBD',
   },
-  submitButtonLoading: {
-    backgroundColor: '#4CAF50',
-  },
-  submitButtonText: {
+  primaryButtonText: {
     color: 'white',
     fontSize: 16,
     fontWeight: '600',
@@ -911,14 +1258,6 @@ const styles = StyleSheet.create({
   modalCancelText: {
     fontSize: 16,
     color: '#666',
-  },
-  locationCardEmpty: {
-    borderColor: '#F44336',
-    borderStyle: 'dashed',
-  },
-  locationAddressEmpty: {
-    color: '#999',
-    fontStyle: 'italic',
   },
   mapModalContainer: {
     flex: 1,
@@ -968,4 +1307,4 @@ const styles = StyleSheet.create({
     color: '#666',
     textAlign: 'center',
   },
-});
+}); 

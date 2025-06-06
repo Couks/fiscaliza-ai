@@ -3,20 +3,20 @@ import { MaterialIcons as Icon } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
-  Alert,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Switch,
-  Text,
-  TouchableOpacity,
-  View
+    Alert,
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    Switch,
+    Text,
+    TouchableOpacity,
+    View
 } from 'react-native';
 import Animated, {
-  BounceIn,
-  FadeIn,
-  SlideInRight,
-  SlideInUp,
+    BounceIn,
+    FadeIn,
+    SlideInRight,
+    SlideInUp,
 } from 'react-native-reanimated';
 
 interface SettingItem {
@@ -438,6 +438,7 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 16,
@@ -447,10 +448,14 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
+    borderBottomLeftRadius: 16,
+    borderBottomRightRadius: 16,
   },
   backButton: {
-    padding: 8,
-    marginRight: 12,
+    padding: 12,
+    backgroundColor: '#F5F5F5',
+    borderRadius: 12,
+    marginRight: 16,
   },
   headerCenter: {
     flex: 1,
@@ -459,7 +464,7 @@ const styles = StyleSheet.create({
     width: 40,
   },
   title: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#2E7D32',
   },
