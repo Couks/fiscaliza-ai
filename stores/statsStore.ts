@@ -1,4 +1,4 @@
-import { statsApi } from '@/services/firebaseApi';
+import { statsApi } from '@/services/mockApi';
 import { create } from 'zustand';
 
 interface GlobalStats {

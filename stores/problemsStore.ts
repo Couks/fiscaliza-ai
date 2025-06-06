@@ -1,5 +1,5 @@
 import { Problem } from '@/data/mockData';
-import { problemsApi } from '@/services/firebaseApi';
+import { problemsApi } from '@/services/mockApi';
 import { create } from 'zustand';
 
 interface ProblemsState {

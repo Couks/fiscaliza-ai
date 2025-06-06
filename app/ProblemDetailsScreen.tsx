@@ -1,32 +1,32 @@
 import { Problem } from '@/data/mockData';
-import { problemsApi } from '@/services/firebaseApi';
+import { problemsApi } from '@/services/mockApi';
 import { useAuthStore } from '@/stores/authStore';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    Dimensions,
-    Image,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  ActivityIndicator,
+  Alert,
+  Dimensions,
+  Image,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import Animated, {
-    BounceIn,
-    Extrapolate,
-    FadeIn,
-    interpolate,
-    SlideInUp,
-    useAnimatedScrollHandler,
-    useAnimatedStyle,
-    useSharedValue,
-    withTiming
+  BounceIn,
+  Extrapolate,
+  FadeIn,
+  interpolate,
+  SlideInUp,
+  useAnimatedScrollHandler,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming
 } from 'react-native-reanimated';
 
 const { width } = Dimensions.get('window');

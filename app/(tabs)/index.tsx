@@ -274,21 +274,7 @@ export default function Index() {
     transform: [{ translateY: filterTranslateY.value }],
   }));
 
-  const getStats = () => {
-    const total = problems.length;
-    const resolved = problems.filter((p) => p.status === "resolved").length;
-    const pending = problems.filter((p) => p.status === "pending").length;
-    const inProgress = problems.filter(
-      (p) => p.status === "in_progress"
-    ).length;
-    const userProblems = user
-      ? problems.filter((p) => p.reportedBy === user.id).length
-      : 0;
 
-    return { total, resolved, pending, inProgress, userProblems };
-  };
-
-  const stats = getStats();
 
   return (
     <SafeAreaView style={styles.container}>

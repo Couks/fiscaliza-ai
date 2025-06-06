@@ -1,3 +1,7 @@
+import { problemsApi } from '@/services/mockApi';
+import { useAuthStore } from '@/stores/authStore';
+import { useProblemsStore } from '@/stores/problemsStore';
+import { useStatsStore } from '@/stores/statsStore';
 import { MaterialIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
@@ -21,10 +25,6 @@ import Animated, {
   useSharedValue,
   withTiming
 } from 'react-native-reanimated';
-import { problemsApi } from '../../services/firebaseApi';
-import { useAuthStore } from '../../stores/authStore';
-import { useProblemsStore } from '../../stores/problemsStore';
-import { useStatsStore } from '../../stores/statsStore';
 
 const { width } = Dimensions.get('window');
 
@@ -100,12 +100,12 @@ export default function ReportScreen() {
 
   const isFormValid = description.trim() && selectedCategory && selectedLocation;
 
-  const steps = [
+  const steps = React.useMemo(() => [
     { title: 'Localização', icon: 'location-on', completed: !!selectedLocation },
     { title: 'Descrição', icon: 'description', completed: !!description.trim() },
     { title: 'Categoria', icon: 'category', completed: !!selectedCategory },
     { title: 'Finalizar', icon: 'send', completed: isFormValid },
-  ];
+  ], [selectedLocation, description, selectedCategory, isFormValid]);
 
   useEffect(() => {
     // Update progress based on completed steps

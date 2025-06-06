@@ -1,5 +1,5 @@
 import { User } from '@/data/mockData';
-import { authApi } from '@/services/firebaseApi';
+import { authApi } from '@/services/mockApi';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
