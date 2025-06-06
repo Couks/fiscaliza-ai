@@ -1,7 +1,7 @@
 import {
-  DarkTheme,
-  DefaultTheme,
-  ThemeProvider,
+    DarkTheme,
+    DefaultTheme,
+    ThemeProvider,
 } from "@react-navigation/native";
 import { useFonts } from "expo-font";
 import { router, Stack } from "expo-router";
@@ -10,6 +10,7 @@ import "react-native-reanimated";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { useColorScheme } from "@/hooks/useColorScheme";
+import { initializeFirebaseData } from "@/services/firebaseApi";
 import { useAuthStore } from "@/stores/authStore";
 import { StatusBar } from "expo-status-bar";
 
@@ -23,6 +24,9 @@ export default function RootLayout() {
 
   useEffect(() => {
     if (loaded) {
+      // Inicializar dados do Firebase na primeira execução
+      initializeFirebaseData();
+      
       // Verificar se o usuário está logado e redirecionar adequadamente
       if (!isAuthenticated) {
         router.replace("/LoginScreen");
