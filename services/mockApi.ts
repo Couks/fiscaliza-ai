@@ -264,12 +264,23 @@ export const statsApi = {
     
     // Simular ranking baseado em pontos
     const ranking = [...mockUsers]
-      .map(user => ({
-        ...user,
-        problemsReported: mockProblems.filter(p => p.reportedBy === user.id).length,
-        problemsResolved: mockProblems.filter(p => p.reportedBy === user.id && p.status === 'resolved').length,
-        totalVotes: mockProblems.filter(p => p.reportedBy === user.id).reduce((sum, p) => sum + p.votes, 0),
-      }))
+      .map(user => {
+        const userProblems = mockProblems.filter(p => p.reportedBy === user.id);
+        const problemsReported = userProblems.length;
+        const problemsResolved = userProblems.filter(p => p.status === 'resolved').length;
+        const totalVotes = userProblems.reduce((sum, p) => sum + p.votes, 0);
+        
+        // Calcular eficiência (% de problemas resolvidos)
+        const efficiency = problemsReported > 0 ? Math.round((problemsResolved / problemsReported) * 100) : 0;
+        
+        return {
+          ...user,
+          problemsReported,
+          problemsResolved,
+          totalVotes,
+          efficiency,
+        };
+      })
       .sort((a, b) => b.points - a.points)
       .map((user, index) => ({ ...user, ranking: index + 1 }));
     
