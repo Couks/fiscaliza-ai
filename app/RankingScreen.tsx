@@ -6,7 +6,6 @@ import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  Dimensions,
   FlatList,
   RefreshControl,
   SafeAreaView,
@@ -17,8 +16,6 @@ import {
   View
 } from 'react-native';
 import Animated from 'react-native-reanimated';
-
-const { width: screenWidth } = Dimensions.get('window');
 
 interface RankingUser extends Omit<User, 'password'> {
   problemsReported: number;

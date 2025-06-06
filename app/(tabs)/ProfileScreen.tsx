@@ -223,7 +223,7 @@ const RecentActivityCard = ({
 
 export default function ProfileScreen() {
   const { user, logout } = useAuthStore();
-  const { userStats, globalStats, ranking, isLoading, lastUpdated, loadUserStats, loadRanking } = useStatsStore();
+  const { userStats, ranking, isLoading, lastUpdated, loadUserStats, loadRanking } = useStatsStore();
   const [refreshing, setRefreshing] = React.useState(false);
 
   // Usar dados reais do mockData ou dados padrão se não logado
