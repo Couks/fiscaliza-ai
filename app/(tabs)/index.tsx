@@ -149,7 +149,7 @@ export default function Index() {
   const { problems, isLoading: loading, lastUpdated, loadProblems } = useProblemsStore();
 
   const [region, setRegion] = useState({
-    latitude: -22.9068, 
+    latitude: -22.9068,  
     longitude: -43.1729,
     latitudeDelta: 0.1,
     longitudeDelta: 0.1,
