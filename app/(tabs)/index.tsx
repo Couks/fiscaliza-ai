@@ -4,7 +4,7 @@ import { useProblemsStore } from "@/stores/problemsStore";
 import { MaterialIcons } from "@expo/vector-icons";
 import * as Location from "expo-location";
 import { useRouter } from "expo-router";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Alert,
   Image,
@@ -148,23 +148,142 @@ export default function Index() {
   // Usar store para dados centralizados
   const { problems, isLoading: loading, lastUpdated, loadProblems } = useProblemsStore();
 
-  const [region, setRegion] = useState({
+  // Região padrão do RJ (zoom out para mostrar toda a cidade) - useMemo para estabilizar
+  const defaultRJRegion = useMemo(() => ({
     latitude: -22.9068,  
     longitude: -43.1729,
-    latitudeDelta: 0.1,
-    longitudeDelta: 0.1,
-  });
+    latitudeDelta: 0.3,   // Zoom out maior para mostrar todo o RJ
+    longitudeDelta: 0.3,
+  }), []);
+
+  const [region, setRegion] = useState(defaultRJRegion);
   const [userLocation, setUserLocation] = useState<LocationCoords | null>(null);
-  const [currentNeighborhood, setCurrentNeighborhood] =
-    useState("");
+  const [currentNeighborhood, setCurrentNeighborhood] = useState("");
   const [locationLoading, setLocationLoading] = useState(false);
   const [filteredProblems, setFilteredProblems] = useState<Problem[]>([]);
   const [selectedProblem, setSelectedProblem] = useState<Problem | null>(null);
   const [selectedFilter, setSelectedFilter] = useState("all");
   const [showFilters, setShowFilters] = useState(false);
+  const [hasCalculatedInitialRegion, setHasCalculatedInitialRegion] = useState(false);
+  const [mapContext, setMapContext] = useState("Carregando...");
+  const [visibleProblemsCount, setVisibleProblemsCount] = useState(0);
 
   const filterOpacity = useSharedValue(0);
   const filterTranslateY = useSharedValue(-20);
+
+  // Função para calcular distância entre dois pontos - useCallback para estabilizar
+  const calculateDistance = useCallback((lat1: number, lon1: number, lat2: number, lon2: number) => {
+    const R = 6371; // Raio da Terra em km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+      Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c; // Distância em km
+  }, []);
+
+  // Função para encontrar problemas próximos ao usuário
+  const findNearbyProblems = useCallback((userLat: number, userLng: number, problems: Problem[], maxDistance = 5) => {
+    return problems.filter(problem => {
+      const distance = calculateDistance(
+        userLat, userLng,
+        problem.location.latitude, problem.location.longitude
+      );
+      return distance <= maxDistance;
+    });
+  }, [calculateDistance]);
+
+  // Função para calcular região que engloba problemas próximos
+  const calculateRegionForProblems = useCallback((userLat: number, userLng: number, nearbyProblems: Problem[]) => {
+    if (nearbyProblems.length === 0) {
+      // Se não há problemas próximos, focar na localização do usuário
+      return {
+        latitude: userLat,
+        longitude: userLng,
+        latitudeDelta: 0.02,
+        longitudeDelta: 0.02,
+      };
+    }
+
+    // Incluir a localização do usuário no cálculo
+    const allLats = [userLat, ...nearbyProblems.map(p => p.location.latitude)];
+    const allLngs = [userLng, ...nearbyProblems.map(p => p.location.longitude)];
+
+    const minLat = Math.min(...allLats);
+    const maxLat = Math.max(...allLats);
+    const minLng = Math.min(...allLngs);
+    const maxLng = Math.max(...allLngs);
+
+    const centerLat = (minLat + maxLat) / 2;
+    const centerLng = (minLng + maxLng) / 2;
+    
+    // Calcular deltas com margem para visualização
+    const latDelta = Math.max((maxLat - minLat) * 1.5, 0.02);
+    const lngDelta = Math.max((maxLng - minLng) * 1.5, 0.02);
+
+    return {
+      latitude: centerLat,
+      longitude: centerLng,
+      latitudeDelta: Math.min(latDelta, 0.1), // Limitar zoom máximo
+      longitudeDelta: Math.min(lngDelta, 0.1),
+    };
+  }, []);
+
+  // Função para calcular a melhor região inicial
+  const calculateIntelligentRegion = useCallback((userLat: number, userLng: number, allProblems: Problem[]) => {
+    console.log(`🗺️ Calculando região inteligente para usuário em ${userLat.toFixed(4)}, ${userLng.toFixed(4)}`);
+    
+    // Primeiro, tentar encontrar problemas num raio de 5km
+    let nearbyProblems = findNearbyProblems(userLat, userLng, allProblems, 5);
+    console.log(`📍 Encontrados ${nearbyProblems.length} problemas num raio de 5km`);
+
+    if (nearbyProblems.length >= 3) {
+      // Se há pelo menos 3 problemas próximos, focar nessa área
+      const region = calculateRegionForProblems(userLat, userLng, nearbyProblems);
+      console.log(`✅ Focando em área com problemas próximos`);
+      setMapContext(`Área próxima • ${nearbyProblems.length} problemas`);
+      return region;
+    }
+
+    // Se não há problemas suficientes em 5km, tentar 10km
+    nearbyProblems = findNearbyProblems(userLat, userLng, allProblems, 10);
+    console.log(`📍 Expandindo busca: ${nearbyProblems.length} problemas num raio de 10km`);
+
+    if (nearbyProblems.length >= 2) {
+      const region = calculateRegionForProblems(userLat, userLng, nearbyProblems);
+      console.log(`✅ Focando em área expandida com problemas próximos`);
+      setMapContext(`Região próxima • ${nearbyProblems.length} problemas`);
+      return region;
+    }
+
+    // Se ainda não há problemas suficientes, verificar se há problemas na cidade
+    const cityProblems = allProblems.filter(problem => {
+      const distance = calculateDistance(
+        userLat, userLng,
+        problem.location.latitude, problem.location.longitude
+      );
+      return distance <= 50; // 50km - área metropolitana
+    });
+
+    if (cityProblems.length === 0) {
+      // Se não há problemas na região, mostrar todo o RJ
+      console.log(`🌎 Nenhum problema na região, mostrando todo o RJ`);
+      setMapContext(`Rio de Janeiro • ${allProblems.length} problemas`);
+      return defaultRJRegion;
+    }
+
+    // Se há alguns problemas na cidade, focar na localização do usuário com zoom médio
+    console.log(`📍 Focando na localização do usuário com zoom médio`);
+    setMapContext(`Sua região • ${cityProblems.length} problemas`);
+    return {
+      latitude: userLat,
+      longitude: userLng,
+      latitudeDelta: 0.05,
+      longitudeDelta: 0.05,
+    };
+  }, [findNearbyProblems, calculateRegionForProblems, calculateDistance, defaultRJRegion]);
 
   useEffect(() => {
     loadProblems();
@@ -176,6 +295,28 @@ export default function Index() {
       loadProblems();
     }
   }, [lastUpdated, loadProblems]);
+
+  // Calcular região inteligente quando temos localização do usuário e problemas carregados
+  useEffect(() => {
+    if (userLocation && problems.length > 0 && !hasCalculatedInitialRegion && !loading) {
+      console.log(`🎯 Iniciando cálculo de região inteligente...`);
+      const intelligentRegion = calculateIntelligentRegion(
+        userLocation.latitude, 
+        userLocation.longitude, 
+        problems
+      );
+      setRegion(intelligentRegion);
+      setHasCalculatedInitialRegion(true);
+      console.log(`✅ Região inteligente calculada e aplicada`);
+    }
+  }, [userLocation, problems, hasCalculatedInitialRegion, loading, calculateIntelligentRegion]);
+
+  // Definir contexto quando há problemas mas não há localização do usuário
+  useEffect(() => {
+    if (!userLocation && problems.length > 0 && !loading) {
+      setMapContext(`Rio de Janeiro • ${problems.length} problemas`);
+    }
+  }, [userLocation, problems, loading]);
 
   useEffect(() => {
     let filtered = problems;
@@ -189,7 +330,24 @@ export default function Index() {
     }
 
     setFilteredProblems(filtered);
-  }, [selectedFilter, problems]);
+    
+    // Atualizar contexto do mapa quando filtros mudam
+    if (hasCalculatedInitialRegion && userLocation) {
+      if (selectedFilter === "all") {
+        // Recalcular contexto para todos os problemas
+        const nearbyProblems = findNearbyProblems(userLocation.latitude, userLocation.longitude, problems, 10);
+        if (nearbyProblems.length >= 2) {
+          setMapContext(`Região próxima • ${filtered.length} problemas`);
+        } else if (problems.length > 0) {
+          setMapContext(`Rio de Janeiro • ${filtered.length} problemas`);
+        }
+      } else {
+        // Mostrar contexto do filtro aplicado
+        const filterName = filterOptions.find(f => f.id === selectedFilter)?.name || 'Filtrados';
+        setMapContext(`${filterName} • ${filtered.length} problemas`);
+      }
+    }
+  }, [selectedFilter, problems, hasCalculatedInitialRegion, userLocation, findNearbyProblems]);
 
   useEffect(() => {
     filterOpacity.value = withTiming(showFilters ? 1 : 0, { duration: 300 });
@@ -199,18 +357,7 @@ export default function Index() {
     });
   }, [showFilters, filterOpacity, filterTranslateY]);
 
-  const requestLocationPermission = useCallback(async () => {
-    try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status === "granted") {
-        getCurrentLocation();
-      }
-    } catch (err) {
-      console.warn(err);
-    }
-  }, []);
-
-  const getNeighborhoodFromLocation = async (
+  const getNeighborhoodFromLocation = useCallback(async (
     latitude: number,
     longitude: number
   ) => {
@@ -234,9 +381,9 @@ export default function Index() {
       console.log("Erro ao obter bairro:", error);
       // Manter o valor padrão se houver erro
     }
-  };
+  }, []);
 
-  const getCurrentLocation = () => {
+  const getCurrentLocation = useCallback(() => {
     setLocationLoading(true);
     Location.getCurrentPositionAsync({
       accuracy: Location.Accuracy.High,
@@ -246,12 +393,17 @@ export default function Index() {
       .then(async (position) => {
         const { latitude, longitude } = position.coords;
         setUserLocation({ latitude, longitude });
-        setRegion({
-          latitude,
-          longitude,
-          latitudeDelta: 0.05,
-          longitudeDelta: 0.05,
-        });
+        
+        // Só ajustar região se ainda não calculamos a região inteligente
+        // ou se não há problemas carregados para considerar
+        if (!hasCalculatedInitialRegion || problems.length === 0) {
+          setRegion({
+            latitude,
+            longitude,
+            latitudeDelta: 0.05,
+            longitudeDelta: 0.05,
+          });
+        }
 
         // Obter o bairro baseado na localização
         await getNeighborhoodFromLocation(latitude, longitude);
@@ -263,7 +415,18 @@ export default function Index() {
       .finally(() => {
         setLocationLoading(false);
       });
-  };
+  }, [hasCalculatedInitialRegion, problems, getNeighborhoodFromLocation]);
+
+  const requestLocationPermission = useCallback(async () => {
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status === "granted") {
+        getCurrentLocation();
+      }
+    } catch (err) {
+      console.warn(err);
+    }
+  }, []);  // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     requestLocationPermission();
@@ -274,7 +437,61 @@ export default function Index() {
     transform: [{ translateY: filterTranslateY.value }],
   }));
 
+  // Função para calcular se um problema está visível na região atual do mapa
+  const isProblemInViewport = (problem: Problem, currentRegion: any) => {
+    const { latitude, longitude, latitudeDelta, longitudeDelta } = currentRegion;
+    
+    const northBound = latitude + latitudeDelta / 2;
+    const southBound = latitude - latitudeDelta / 2;
+    const eastBound = longitude + longitudeDelta / 2;
+    const westBound = longitude - longitudeDelta / 2;
+    
+    return (
+      problem.location.latitude <= northBound &&
+      problem.location.latitude >= southBound &&
+      problem.location.longitude <= eastBound &&
+      problem.location.longitude >= westBound
+    );
+  };
 
+  // Função para calcular problemas visíveis no viewport atual
+  const updateVisibleProblemsCount = useCallback((currentRegion: any, currentProblems: Problem[]) => {
+    const visibleProblems = currentProblems.filter(problem => 
+      isProblemInViewport(problem, currentRegion)
+    );
+    setVisibleProblemsCount(visibleProblems.length);
+    return visibleProblems.length;
+  }, []);
+
+  // Função para centralizar na localização do usuário
+  const centerOnUserLocation = useCallback(() => {
+    if (userLocation) {
+      const newRegion = {
+        latitude: userLocation.latitude,
+        longitude: userLocation.longitude,
+        latitudeDelta: 0.02,
+        longitudeDelta: 0.02,
+      };
+      setRegion(newRegion);
+      setMapContext(`Sua localização • ${updateVisibleProblemsCount(newRegion, filteredProblems)} problemas`);
+    } else {
+      // Se não tem localização, solicitar
+      getCurrentLocation();
+    }
+  }, [userLocation, filteredProblems, updateVisibleProblemsCount, getCurrentLocation]);
+
+  // Atualizar contagem de problemas visíveis quando filtros ou região mudam
+  useEffect(() => {
+    if (filteredProblems.length > 0) {
+      updateVisibleProblemsCount(region, filteredProblems);
+    }
+  }, [filteredProblems, region, updateVisibleProblemsCount]);
+
+  // Função para capturar mudanças na região do mapa (quando usuário navega/faz zoom)
+  const onRegionChangeComplete = (newRegion: any) => {
+    setRegion(newRegion);
+    updateVisibleProblemsCount(newRegion, filteredProblems);
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -282,7 +499,9 @@ export default function Index() {
       <Animated.View entering={SlideInUp.delay(100)} style={styles.header}>
         <View style={styles.headerLeft}>
           <View style={styles.titleContainer}>
-            <Text style={styles.title}>{currentNeighborhood}</Text>
+            <Text style={styles.title}>
+              {currentNeighborhood || mapContext}
+            </Text>
             {locationLoading && (
               <Animated.View
                 entering={FadeIn}
@@ -298,7 +517,10 @@ export default function Index() {
           </View>
           <View style={styles.subtitleContainer}>
             <Text style={styles.subtitle}>
-              {filteredProblems.length} problema(s) no mapa
+              {visibleProblemsCount > 0 
+                ? `${visibleProblemsCount} problema(s) visível(is) • ${filteredProblems.length} total`
+                : currentNeighborhood ? mapContext : `${filteredProblems.length} problema(s) no mapa`
+              }
             </Text>
             {selectedFilter !== 'all' && (
               <View style={styles.filterIndicator}>
@@ -327,11 +549,47 @@ export default function Index() {
               <View style={styles.filterBadge} />
             )}
           </TouchableOpacity>
+          
+          {/* Botão Região Inteligente */}
+          {userLocation && problems.length > 0 && (
+            <TouchableOpacity
+              style={[
+                styles.headerButton,
+                hasCalculatedInitialRegion && styles.headerButtonSmart
+              ]}
+              onPress={() => {
+                if (userLocation) {
+                  const intelligentRegion = calculateIntelligentRegion(
+                    userLocation.latitude, 
+                    userLocation.longitude, 
+                    problems
+                  );
+                  setRegion(intelligentRegion);
+                  updateVisibleProblemsCount(intelligentRegion, filteredProblems);
+                }
+              }}
+            >
+              <MaterialIcons 
+                name="auto-awesome" 
+                size={24} 
+                color={hasCalculatedInitialRegion ? "#2E7D32" : "#666"} 
+              />
+            </TouchableOpacity>
+          )}
+          
+          {/* Botão Minha Localização */}
           <TouchableOpacity
-            style={styles.headerButton}
-            onPress={getCurrentLocation}
+            style={[
+              styles.headerButton,
+              userLocation && styles.headerButtonActive
+            ]}
+            onPress={centerOnUserLocation}
           >
-            <MaterialIcons name="my-location" size={24} color="#666" />
+            <MaterialIcons 
+              name="my-location" 
+              size={24} 
+              color={userLocation ? "#2E7D32" : "#666"} 
+            />
           </TouchableOpacity>
         </View>
       </Animated.View>
@@ -366,6 +624,7 @@ export default function Index() {
         <MapView
           style={styles.map}
           region={region}
+          onRegionChangeComplete={onRegionChangeComplete}
           showsUserLocation={true}
           showsMyLocationButton={false}
           mapType="standard"
@@ -651,6 +910,9 @@ const styles = StyleSheet.create({
     backgroundColor: "#F5F5F5",
   },
   headerButtonActive: {
+    backgroundColor: "#E8F5E8",
+  },
+  headerButtonSmart: {
     backgroundColor: "#E8F5E8",
   },
   filtersContainer: {
@@ -979,11 +1241,12 @@ const styles = StyleSheet.create({
   },
   filterBadge: {
     position: "absolute",
-    top: 12,
-    right: 12,
+    top: -2,
+    right: -2,
     backgroundColor: "#F44336",
-    borderRadius: 12,
-    padding: 2,
+    borderRadius: 6,
+    width: 12,
+    height: 12,
   },
   mapStatusIndicator: {
     position: "absolute",

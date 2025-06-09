@@ -7,7 +7,6 @@ import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  Dimensions,
   Image,
   SafeAreaView,
   ScrollView,
@@ -28,8 +27,6 @@ import Animated, {
   useSharedValue,
   withTiming
 } from 'react-native-reanimated';
-
-const { width } = Dimensions.get('window');
 
 const getCategoryInfo = (category: string) => {
   switch (category) {

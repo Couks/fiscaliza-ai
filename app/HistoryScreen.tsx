@@ -6,25 +6,22 @@ import { MaterialIcons as Icon } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
-  Dimensions,
-  FlatList,
-  Image,
-  SafeAreaView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View
+    ActivityIndicator,
+    FlatList,
+    Image,
+    SafeAreaView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import Animated, {
-  BounceIn,
-  FadeIn,
-  SlideInRight,
-  SlideInUp,
-  ZoomIn,
+    BounceIn,
+    FadeIn,
+    SlideInRight,
+    SlideInUp,
+    ZoomIn
 } from 'react-native-reanimated';
-
-const { width } = Dimensions.get('window');
 
 const statusConfig = {
   pending: { name: 'Pendente', color: '#F44336', icon: 'schedule' as const },
@@ -137,8 +134,6 @@ const AnimatedProblemCard = ({
     </Animated.View>
   );
 };
-
-
 
 export default function HistoryScreen() {
   const router = useRouter();

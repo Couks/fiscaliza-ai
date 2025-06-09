@@ -3,28 +3,24 @@ import { MaterialIcons as Icon } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
-    FlatList,
-    Image,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  ActivityIndicator,
+  FlatList,
+  Image,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import Animated, {
-    BounceIn,
-    FadeIn,
-    SlideInDown,
-    SlideInRight,
-    SlideInUp,
-    useAnimatedStyle,
-    useSharedValue,
-    withSpring,
-    withTiming,
-    ZoomIn,
+  BounceIn,
+  FadeIn,
+  SlideInDown,
+  SlideInRight,
+  SlideInUp,
+  ZoomIn
 } from 'react-native-reanimated';
 import { useProblemsStore } from '../../stores/problemsStore';
 
@@ -159,45 +155,6 @@ const AnimatedProblemCard = ({
   );
 };
 
-const AnimatedStatCard = ({ 
-  title, 
-  value, 
-  delay = 0 
-}: { 
-  title: string; 
-  value: number; 
-  delay?: number; 
-}) => {
-  const scale = useSharedValue(0);
-  const opacity = useSharedValue(0);
-  
-  React.useEffect(() => {
-    const timer = setTimeout(() => {
-      scale.value = withSpring(1, {
-        damping: 12,
-        stiffness: 100,
-      });
-      opacity.value = withTiming(1, {
-        duration: 300,
-      });
-    }, delay);
-    
-    return () => clearTimeout(timer);
-  }, [delay, scale, opacity]);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-    opacity: opacity.value,
-  }));
-
-  return (
-    <Animated.View style={[styles.statItem, animatedStyle]}>
-      <Text style={styles.statNumber}>{value}</Text>
-      <Text style={styles.statLabel}>{title}</Text>
-    </Animated.View>
-  );
-};
-
 export default function ProblemsListScreen() {
   const router = useRouter();
   
@@ -248,17 +205,6 @@ export default function ProblemsListScreen() {
       })}
     />
   );
-
-  const getStats = () => {
-    const total = problems.length;
-    const resolved = problems.filter(p => p.status === 'resolved').length;
-    const pending = problems.filter(p => p.status === 'pending').length;
-    const inProgress = problems.filter(p => p.status === 'in_progress').length;
-    
-    return { total, resolved, pending, inProgress };
-  };
-
-  const stats = getStats();
 
   return (
     <SafeAreaView style={styles.container}>
@@ -873,3 +819,4 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
  });
+ 
