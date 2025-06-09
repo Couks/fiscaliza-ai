@@ -149,14 +149,14 @@ export default function Index() {
   const { problems, isLoading: loading, lastUpdated, loadProblems } = useProblemsStore();
 
   const [region, setRegion] = useState({
-    latitude: -22.9068, // Coordenadas do Rio de Janeiro
+    latitude: -22.9068, 
     longitude: -43.1729,
     latitudeDelta: 0.1,
     longitudeDelta: 0.1,
   });
   const [userLocation, setUserLocation] = useState<LocationCoords | null>(null);
   const [currentNeighborhood, setCurrentNeighborhood] =
-    useState("Ilha do Governador");
+    useState("");
   const [locationLoading, setLocationLoading] = useState(false);
   const [filteredProblems, setFilteredProblems] = useState<Problem[]>([]);
   const [selectedProblem, setSelectedProblem] = useState<Problem | null>(null);

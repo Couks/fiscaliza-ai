@@ -1014,6 +1014,136 @@ export const mockProblems: Problem[] = [
     votes: 11,
     comments: [],
   },
+  {
+    id: '16',
+    title: 'Buraco na Rua Quintino Bocaiúva',
+    description: 'Buraco grande na pista da Rua Quintino Bocaiúva, próximo ao número 500. O buraco está causando problemas para veículos e pedestres.',
+    category: 'road',
+    status: 'pending',
+    priority: 'high',
+    location: {
+      latitude: -22.8765,
+      longitude: -43.3123,
+      address: 'Rua Quintino Bocaiúva, 500 - Quintino, Rio de Janeiro - RJ',
+    },
+    images: [
+      'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRkfiX6VxBp9L3GvGR69wKo7zUQv-l4N9vv-A&s',
+    ],
+    reportedBy: '1',
+    reportedAt: '2024-01-22T14:30:00.000Z',
+    votes: 12,
+    comments: [
+      {
+        id: '18',
+        text: 'Já reportei para a CET-Rio também.',
+        userId: '2',
+        userName: 'Maria Santos',
+        createdAt: '2024-01-22T15:45:00.000Z',
+      }
+    ],
+},
+{
+    id: '17',
+    title: 'Lâmpadas Queimadas - Rua Madureira',
+    description: 'Sequência de 3 postes de iluminação não estão funcionando na Rua Madureira, deixando a área escura e insegura durante a noite.',
+    category: 'lighting',
+    status: 'in_progress',
+    priority: 'medium',
+    location: {
+      latitude: -22.8845,
+      longitude: -43.3234,
+      address: 'Rua Madureira, 300 - Madureira, Rio de Janeiro - RJ',
+    },
+    images: [
+      'https://www.clickguarulhos.com.br/wp-content/uploads/2019/07/20190730-lampada-queimada_palmira-rossi_recreio-sao-jorge-1.jpeg',
+    ],
+    reportedBy: '3',
+    reportedAt: '2024-01-21T19:15:00.000Z',
+    votes: 8,
+    comments: [
+      {
+        id: '19',
+        text: 'Light já foi notificada e está trabalhando na solução.',
+        userId: '4',
+        userName: 'Ana Paula Costa',
+        createdAt: '2024-01-22T10:30:00.000Z',
+      }
+    ],
+},
+{
+    id: '18',
+    title: 'Lixo Acumulado - Praça do Patriarca',
+    description: 'Acúmulo de lixo na Praça do Patriarca, em Madureira. O lixo não foi coletado há vários dias e está atraindo insetos e roedores.',
+    category: 'cleaning',
+    status: 'pending',
+    priority: 'high',
+    location: {
+      latitude: -22.8789,
+      longitude: -43.3187,
+      address: 'Praça do Patriarca - Madureira, Rio de Janeiro - RJ',
+    },
+    images: [
+      'https://www.correiodopovo.com.br/image/contentid/policy:1.835863:1677755916/lixoALS.jpeg.jpeg?a=2%3A1&$p$a=72124cc',
+    ],
+    reportedBy: '5',
+    reportedAt: '2024-01-20T08:45:00.000Z',
+    votes: 15,
+    comments: [
+      {
+        id: '20',
+        text: 'Situação crítica! Precisa ser resolvido urgente.',
+        userId: '6',
+        userName: 'Fernanda Lima',
+        createdAt: '2024-01-20T12:30:00.000Z',
+      }
+    ],
+},
+{
+    id: '19',
+    title: 'Calçada Danificada - Rua Conselheiro Galvão',
+    description: 'Calçada com buracos e desníveis na Rua Conselheiro Galvão, em Quintino. Dificultando a passagem de pedestres, especialmente idosos.',
+    category: 'road',
+    status: 'pending',
+    priority: 'medium',
+    location: {
+      latitude: -22.8723,
+      longitude: -43.3156,
+      address: 'Rua Conselheiro Galvão, 150 - Quintino, Rio de Janeiro - RJ',
+    },
+    images: [
+      'https://portal-arquivos.engeplus.com.br/cache/noticia/geral/2012/calcada-danificada-e-responsabilidade-do-morador/calcada-danificada-e-responsabilidade-do-morador-933618.jpg',
+    ],
+    reportedBy: '7',
+    reportedAt: '2024-01-19T11:20:00.000Z',
+    votes: 9,
+    comments: [],
+},
+{
+    id: '20',
+    title: 'Semáforo com Defeito - Rua Carolina Machado',
+    description: 'Semáforo do cruzamento da Rua Carolina Machado com Rua Madureira não está funcionando corretamente, criando risco de acidentes.',
+    category: 'others',
+    status: 'in_progress',
+    priority: 'high',
+    location: {
+      latitude: -22.8812,
+      longitude: -43.3201,
+      address: 'Rua Carolina Machado, 200 - Madureira, Rio de Janeiro - RJ',
+    },
+    images: [],
+    reportedBy: '8',
+    reportedAt: '2024-01-18T16:30:00.000Z',
+    votes: 20,
+    comments: [
+      {
+        id: '21',
+        text: 'CET-Rio já foi notificada e está trabalhando no reparo.',
+        userId: '9',
+        userName: 'Pedro Santos',
+        createdAt: '2024-01-19T09:15:00.000Z',
+      }
+    ],
+}
 ];
 
 // Estatísticas globais

@@ -1,50 +1,111 @@
-# Welcome to your Expo app 👋
+# Fiscaliza AI 🏙️
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+O Fiscaliza AI é um aplicativo móvel desenvolvido para a disciplina de Projeto de Dispositivos Móveis (5PDM), com o objetivo de contribuir para a construção de cidades inteligentes através do engajamento cidadão. O aplicativo permite que os usuários reportem problemas urbanos, auxiliando a prefeitura no mapeamento e gestão de questões municipais.
 
-## Get started
+## 🎯 Objetivo
 
-1. Install dependencies
+O projeto visa facilitar a comunicação entre cidadãos e a administração pública, permitindo:
+- Reportar problemas urbanos (vias, iluminação, limpeza, etc.)
+- Visualizar problemas reportados em um mapa interativo
+- Acompanhar o status das solicitações
+- Contribuir com votos e comentários em problemas existentes
+- Gerar métricas para análise da prefeitura
 
+## 🛠️ Tecnologias Utilizadas
+
+- **Framework Principal**: React Native com Expo
+- **Navegação**: Expo Router (File-based routing)
+- **Gerenciamento de Estado**: Zustand
+- **Mapas**: React Native Maps
+- **Animações**: React Native Reanimated
+- **Localização**: Expo Location
+- **Armazenamento**: Async Storage
+- **UI/UX**: Material Icons, Expo Blur
+- **Linguagem**: TypeScript
+
+## 📱 Funcionalidades Principais
+
+- Mapa interativo com marcadores de problemas
+- Sistema de filtros por categoria e status
+- Geolocalização do usuário
+- Upload de imagens
+- Sistema de votação e comentários
+- Perfil do usuário e histórico de reportes
+- Ranking de usuários mais ativos
+- Interface moderna e responsiva
+
+## 🚀 Como Executar o Projeto
+
+1. **Pré-requisitos**
+   - Node.js (versão LTS recomendada)
+   - npm ou yarn
+   - Expo CLI (`npm install -g expo-cli`)
+   - Android Studio (para emulador Android) ou Xcode (para iOS)
+
+2. **Instalação**
    ```bash
+   # Clone o repositório
+   git clone https://github.com/Couks/fiscaliza-ai
+
+   # Entre no diretório
+   cd fiscaliza-ai
+
+   # Instale as dependências
    npm install
    ```
 
-2. Start the app
-
+3. **Executando o Projeto**
    ```bash
+   # Inicie o servidor de desenvolvimento
    npx expo start
    ```
 
-In the output, you'll find options to open the app in a
+4. **Opções de Execução**
+   - Pressione `a` para abrir no emulador Android
+   - Pressione `i` para abrir no simulador iOS
+   - Escaneie o QR Code com o app Expo Go (disponível na Play Store/App Store)
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## 📦 Dependências Principais
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+```json
+{
+  "dependencies": {
+    "expo": "~53.0.9",
+    "expo-router": "~5.0.6",
+    "react-native-maps": "1.20.1",
+    "react-native-reanimated": "~3.17.4",
+    "zustand": "^5.0.5",
+    "expo-location": "~18.1.5"
+  }
+}
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## 🏗️ Estrutura do Projeto
 
-## Learn more
+```
+fiscaliza-ai/
+├── app/                   # Diretório principal do aplicativo
+│   ├── (tabs)/            # Rotas principais (tabs)
+│   ├── _layout.tsx        # Layout principal
+│   └── ...                # Outras telas
+├── assets/                # Recursos estáticos
+├── components/            # Componentes reutilizáveis
+├── stores/                # Gerenciamento de estado (Zustand)
+└── types/                 # Definições de tipos TypeScript
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+## 🤝 Contribuindo
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+1. Faça um Fork do projeto
+2. Crie uma Branch para sua Feature (`git checkout -b feature/AmazingFeature`)
+3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
+4. Push para a Branch (`git push origin feature/AmazingFeature`)
+5. Abra um Pull Request
 
-## Join the community
+## 📄 Licença
 
-Join our community of developers creating universal apps.
+Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## 👥 Autores
+
+- Matheus Castro - Desenvolvimento inicial
